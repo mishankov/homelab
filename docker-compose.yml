@@ -41,3 +41,36 @@ services:
       - ./container_data/jellyfin/cache:/cache
       - ~/media:/media
     restart: 'unless-stopped'
+
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    command:
+      - '--path.rootfs=/host'
+    network_mode: host
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - '/:/host:ro,rslave'
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    user: root
+    ports:
+      - 9090:9090
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./container_data/prometheus:/prometheus:rw
+    restart: unless-stopped
+    depends_on:
+      - node_exporter
+
+  grafana:
+    image: grafana/grafana-oss
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+     - '3000:3000'
+    depends_on:
+      - prometheus
