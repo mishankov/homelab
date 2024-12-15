@@ -6,7 +6,7 @@
 # Using this will ignore remaining config in this file
 # externalConfig: https://example.com/server-luci/config.yaml
 
-title: "Домашняя страница"
+title: "Стартовая страница"
 subtitle: ""
 # documentTitle: "Welcome" # Customize the browser tab text
 # Alternatively a fa icon can be provided:
@@ -49,15 +49,18 @@ services:
     items:
       - name: "qBitorrent"
         icon: "fas fa-download"
-        subtitle: "Качалка"
+        subtitle: "admin / 12345678"
         url: "http://10.0.0.157:8080/"
         target: "_blank"
+        type: "Ping"
+        successCodes: [200, 401]
 
       - name: "Jellyfin"
         icon: "fas fa-play"
         subtitle: "Сериальчики"
         url: "http://10.0.0.157:8096/"
         target: "_blank"
+        type: "Ping"
 
   - name: "Внешние сервисы"
     icon: "fas fa-globe"
