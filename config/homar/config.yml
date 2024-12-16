@@ -47,6 +47,13 @@ services:
   - name: "Дом"
     icon: "fas fa-house"
     items:
+      - name: "Jellyfin"
+        icon: "fas fa-play"
+        subtitle: "Сериальчики"
+        url: "http://10.0.0.157:8096/"
+        target: "_blank"
+        type: "Ping"
+
       - name: "qBitorrent"
         icon: "fas fa-download"
         subtitle: "admin / 12345678"
@@ -55,10 +62,10 @@ services:
         type: "Ping"
         successCodes: [200, 401]
 
-      - name: "Jellyfin"
-        icon: "fas fa-play"
-        subtitle: "Сериальчики"
-        url: "http://10.0.0.157:8096/"
+      - name: "Web-tail"
+        icon: "fas fa-file-lines"
+        subtitle: "Логи"
+        url: "http://10.0.0.157:4443/"
         target: "_blank"
         type: "Ping"
 

@@ -42,6 +42,18 @@ services:
       - ~/media:/media
     restart: 'unless-stopped'
 
+  # https://github.com/mishankov/web-tail
+  web-tail:
+    image: ghcr.io/mishankov/web-tail:main
+    container_name: web-tail
+    ports:
+      - 4443:4443
+    environment:
+      - ASSETS=/app/dist/public
+    volumes:
+      - /var/log:/logs/system
+      - ./config/web-tail/web-tail.config.toml:/app/web-tail.config.toml
+
   node_exporter:
     image: quay.io/prometheus/node-exporter:latest
     container_name: node_exporter
