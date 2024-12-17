@@ -53,6 +53,7 @@ services:
     volumes:
       - /var/log:/logs/system
       - ./config/web-tail/web-tail.config.toml:/app/web-tail.config.toml
+    restart: 'unless-stopped'
 
   node_exporter:
     image: quay.io/prometheus/node-exporter:latest
