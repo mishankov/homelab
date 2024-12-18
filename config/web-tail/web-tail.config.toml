@@ -1,5 +1,3 @@
-port = 4443
-
 [[sources]]
 name = "syslog"
 type = "local:file"

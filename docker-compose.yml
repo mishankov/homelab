@@ -7,7 +7,7 @@ services:
     volumes:
       - ./config/homar:/www/assets # Make sure your local config directory exists
     ports:
-      - 4444:8080
+      - ${HOMER_PORT}:8080
     environment:
       - INIT_ASSETS=1 # default, requires the config directory to be writable for the container user (see user option)
     restart: unless-stopped
@@ -20,22 +20,24 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Etc/UTC
-      - WEBUI_PORT=8080
+      - WEBUI_PORT=${TORRENT_WEBUI_PORT}
       - TORRENTING_PORT=6881
     volumes:
       - ./container_data/qbittorrent/appdata:/config
       - ~/media:/downloads/media
     ports:
-      - 8080:8080
-      - 6881:6881
-      - 6881:6881/udp
+      - ${TORRENT_WEBUI_PORT}:8080
+      - ${TORRENT_TORRENTING_PORT}:6881
+      - ${TORRENT_TORRENTING_PORT}:6881/udp
     restart: unless-stopped
 
   # https://jellyfin.org/docs/general/installation/container
   jellyfin:
     image: jellyfin/jellyfin
     container_name: jellyfin
-    network_mode: 'host'
+    # network_mode: 'host'
+    ports:
+      - ${JELLYFIN_PORT}:8096
     volumes:
       - ./container_data/jellyfin/config:/config
       - ./container_data/jellyfin/cache:/cache
@@ -47,7 +49,7 @@ services:
     image: ghcr.io/mishankov/web-tail:main
     container_name: web-tail
     ports:
-      - 4443:4443
+      - ${WEBTAIL_PORT}:4444
     environment:
       - ASSETS=/app/dist/public
     volumes:
