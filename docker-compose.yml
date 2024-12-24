@@ -27,8 +27,8 @@ services:
       - ~/media:/downloads/media
     ports:
       - ${TORRENT_WEBUI_PORT}:8080
-      - ${TORRENT_TORRENTING_PORT}:6881
-      - ${TORRENT_TORRENTING_PORT}:6881/udp
+      - ${TORRENT_TORRENTING_PORT}:${TORRENT_TORRENTING_PORT}
+      - ${TORRENT_TORRENTING_PORT}:${TORRENT_TORRENTING_PORT}/udp
     restart: unless-stopped
 
   # https://jellyfin.org/docs/general/installation/container
