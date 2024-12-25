@@ -67,3 +67,4 @@ services:
       - ./config/ssm/.env
     volumes:
       - /:/hostfs:ro
+    restart: 'unless-stopped'
