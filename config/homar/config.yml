@@ -72,7 +72,7 @@ services:
       - name: "System monitor"
         icon: "fas fa-desktop"
         subtitle: "Мониторинг ресурсов"
-        url: "http://10.0.0.157:4442/"
+        url: "http://10.0.0.157:44442/"
         target: "_blank"
         type: "Ping"
 
