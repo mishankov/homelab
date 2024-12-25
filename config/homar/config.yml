@@ -69,6 +69,13 @@ services:
         target: "_blank"
         type: "Ping"
 
+      - name: "System monitor"
+        icon: "fas fa-desktop"
+        subtitle: "Мониторинг ресурсов"
+        url: "http://10.0.0.157:4442/"
+        target: "_blank"
+        type: "Ping"
+
   - name: "Внешние сервисы"
     icon: "fas fa-globe"
     items:

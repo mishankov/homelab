@@ -56,3 +56,14 @@ services:
       - /var/log:/logs/system
       - ./config/web-tail/web-tail.config.toml:/app/web-tail.config.toml
     restart: 'unless-stopped'
+
+  # https://github.com/mishankov/simple-system-monitor
+  ssm:
+    image: ghcr.io/mishankov/simple-system-monitor:main
+    container_name: simple-system-monitor
+    ports:
+      - ${SSM_PORT}:4442
+    env_file:
+      - ./config/ssm/.env
+    volumes:
+      - /:/hostfs:ro
