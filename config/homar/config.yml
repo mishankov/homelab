@@ -50,14 +50,14 @@ services:
       - name: "Jellyfin"
         icon: "fas fa-play"
         subtitle: "Сериальчики"
-        url: "http://10.0.0.157:8096/"
+        url: "http://10.0.0.44:8096/"
         target: "_blank"
         type: "Ping"
 
       - name: "qBitorrent"
         icon: "fas fa-download"
         subtitle: "admin / 12345678"
-        url: "http://10.0.0.157:8080/"
+        url: "http://10.0.0.44:8080/"
         target: "_blank"
         type: "Ping"
         successCodes: [200, 401]
@@ -65,14 +65,14 @@ services:
       - name: "Web-tail"
         icon: "fas fa-file-lines"
         subtitle: "Логи"
-        url: "http://10.0.0.157:4443/"
+        url: "http://10.0.0.44:4443/"
         target: "_blank"
         type: "Ping"
 
       - name: "System monitor"
         icon: "fas fa-desktop"
         subtitle: "Мониторинг ресурсов"
-        url: "http://10.0.0.157:44442/"
+        url: "http://10.0.0.44:44442/"
         target: "_blank"
         type: "Ping"
 
