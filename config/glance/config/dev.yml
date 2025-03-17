@@ -20,6 +20,16 @@
               subreddit: sveltejs
               show-flairs: true
 
+            - type: reddit
+              subreddit: ollama
+              show-flairs: true
+        
+        - type: rss
+          title: RSS
+          feeds:
+            - url: https://nim-lang.org/feed.xml
+              title: Nim
+
     - size: full
       widgets:
         - type: videos
@@ -28,3 +38,4 @@
             - UCbRP3c757lWg9M-U7TyEkXA # Theo
             - UCsBjURrPoezykLs9EqgamOA # Fireship
             - UC6wpjLSLn2dhlaDjn6_V0rw # Joy of Code
+            - UCUyeluBRhGPCW4rPe_UvBZQ # ThePrimeTime

@@ -5,21 +5,31 @@
   columns:
     - size: full
       widgets:
+        - type: clock
+          hour-format: 24h
+          css-class: "no-header home-clock"
+
         - type: search
           search-engine: google
           autofocus: true
           new-tab: true
+          css-class: "no-header"
           bangs:
             - title: GitHub
               shortcut: "!gh"
               url: https://github.com/search?q={QUERY}
 
         - type: bookmarks
+          css-class: "no-header"
           groups:
             - title: General
               links:
                 - title: Dev
                   url: /dev
+                - title: Games
+                  url: /games
+                - title: Basketball
+                  url: /basketball
             - title: Entertainment
               links:
                 - title: YouTube

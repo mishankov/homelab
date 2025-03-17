@@ -1,0 +1,16 @@
+/* Common */
+
+.no-header>.widget-header {
+  display: none;
+}
+
+/* Home page clock */
+
+.home-clock>.widget-content {
+  background-color: inherit;
+  border: none
+}
+
+.home-clock>.widget-content>.clock>div {
+  justify-content: center;
+}

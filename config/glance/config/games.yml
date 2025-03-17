@@ -1,0 +1,45 @@
+- name: Games
+  columns:
+    - size: full
+      widgets:
+        - type: videos
+          style: grid-cards
+          css-class: "no-header"
+          channels:
+            - UC4yv7nCVHHmi1PiQk_VVifg # AshKing
+            - UCq7JZ8ATgQWeu6sDM1czjhg # StopGmae
+            - UC1CchA0SjApw4T-AYkN7ytg # IGM
+            - UCOmAtwe8UxKuj-qIdV77Iog # xDlate
+
+- name: Basketball
+  columns:
+    - size: full
+      widgets:
+      - type: group
+        widgets:
+          - type: reddit
+            subreddit: lakers
+            show-thumbnails: true
+            show-flairs: true
+            collapse-after: 15
+
+          - type: reddit
+            subreddit: nba
+            show-thumbnails: true
+            show-flairs: true
+            collapse-after: 10
+
+          - type: reddit
+            subreddit: nbatalk
+            show-thumbnails: true
+            show-flairs: true
+            collapse-after: 15
+
+    - size: full
+      widgets:
+        - type: videos
+          style: grid-cards
+          channels:
+            - UCpH_yPffJwMKWvS_Ncq862w # Daniel Li
+            - UC3HPbvB6f58X_7SMIp6OPYw # Thinking Basketball
+            - UCSpvjDk06HLxBaw8sZw7SkA # BBALLBREAKDOWN
