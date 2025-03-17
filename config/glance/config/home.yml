@@ -30,3 +30,7 @@
                   url: https://github.com/
                 - title: Reddit
                   url: https://www.reddit.com/
+            - title: Infra
+              links:
+                - title: Uptime
+                  url: https://uptime.mishankov.dev/dashboard
