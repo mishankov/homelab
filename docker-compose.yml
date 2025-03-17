@@ -68,3 +68,15 @@ services:
     volumes:
       - /:/hostfs:ro
     restart: 'unless-stopped'
+
+  glance:
+    container_name: glance
+    image: glanceapp/glance
+    volumes:
+      - ./config/glance/config:/app/config
+      - ./config/glance/assets:/app/assets
+      # Optionally, also mount docker socket if you want to use the docker containers widget
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - ${GLANCE_PORT}:8080
+    env_file: ./config/glance/.env

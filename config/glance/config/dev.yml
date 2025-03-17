@@ -1,0 +1,30 @@
+- name: Dev
+  
+  columns:
+    - size: small
+      widgets:
+        - type: releases
+          cache: 1d
+          show-source-icon: true
+          repositories:
+            - mishankov/logman
+            - mishankov/testman
+
+        - type: group
+          widgets:
+            - type: reddit
+              subreddit: golang
+              show-flairs: true
+
+            - type: reddit
+              subreddit: sveltejs
+              show-flairs: true
+
+    - size: full
+      widgets:
+        - type: videos
+          style: grid-cards
+          channels:
+            - UCbRP3c757lWg9M-U7TyEkXA # Theo
+            - UCsBjURrPoezykLs9EqgamOA # Fireship
+            - UC6wpjLSLn2dhlaDjn6_V0rw # Joy of Code

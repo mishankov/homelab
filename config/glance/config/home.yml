@@ -1,0 +1,32 @@
+- name: Home
+  width: slim
+  hide-desktop-navigation: true
+  center-vertically: true
+  columns:
+    - size: full
+      widgets:
+        - type: search
+          search-engine: google
+          autofocus: true
+          new-tab: true
+          bangs:
+            - title: GitHub
+              shortcut: "!gh"
+              url: https://github.com/search?q={QUERY}
+
+        - type: bookmarks
+          groups:
+            - title: General
+              links:
+                - title: Dev
+                  url: /dev
+            - title: Entertainment
+              links:
+                - title: YouTube
+                  url: https://www.youtube.com/
+            - title: Social
+              links:
+                - title: Github
+                  url: https://github.com/
+                - title: Reddit
+                  url: https://www.reddit.com/
