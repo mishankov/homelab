@@ -1,0 +1,84 @@
+- name: Fun
+  columns:
+    - size: full
+      widgets:
+      - type: group
+        widgets:
+          - type: reddit
+            subreddit: lakers
+            show-thumbnails: true
+            show-flairs: true
+            collapse-after: 15
+
+          - type: reddit
+            subreddit: nba
+            show-thumbnails: true
+            show-flairs: true
+            collapse-after: 10
+
+          - type: reddit
+            subreddit: nbatalk
+            show-thumbnails: true
+            show-flairs: true
+            collapse-after: 15
+
+    - size: full
+      widgets:
+      - type: group
+        widgets:
+        - type: videos
+          title: Basketball
+          style: grid-cards
+          channels:
+            - UCpH_yPffJwMKWvS_Ncq862w # Daniel Li
+            - UC3HPbvB6f58X_7SMIp6OPYw # Thinking Basketball
+            - UCSpvjDk06HLxBaw8sZw7SkA # BBALLBREAKDOWN
+
+        - type: videos
+          style: grid-cards
+          title: Games
+          channels:
+            - UC4yv7nCVHHmi1PiQk_VVifg # AshKing
+            - UCq7JZ8ATgQWeu6sDM1czjhg # StopGmae
+            - UC1CchA0SjApw4T-AYkN7ytg # IGM
+            - UCOmAtwe8UxKuj-qIdV77Iog # xDlate
+
+- name: News
+  columns:
+    - size: full
+      widgets:
+        - type: rss
+          title: RSS
+          feeds:
+            - url: https://rssexport.rbc.ru/rbcnews/news/30/full.rss
+              title: РБК
+
+- name: Homelab
+  width: slim
+  columns:
+    - size: full
+      widgets:
+        - type: server-stats
+          servers:
+            - type: local
+              name: Server monitor
+
+    - size: full
+      widgets:
+        - type: monitor
+          cache: 1m
+          title: Services
+          sites:
+            - title: Jellyfin
+              url: http://10.0.0.44:8096/
+              icon: si:jellyfin
+
+            - title: qBitorrent
+              url: http://10.0.0.44:8080/
+              icon: si:qbittorrent
+
+            - title: "Web-tail"
+              url: "http://10.0.0.44:4443/"
+
+            - title: "System monitor"
+              url: "http://10.0.0.44:44442/"

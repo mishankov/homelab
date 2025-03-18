@@ -22,14 +22,12 @@
         - type: bookmarks
           css-class: "no-header"
           groups:
-            - title: General
+            - title: Glance
               links:
                 - title: Dev
                   url: /dev
-                - title: Games
-                  url: /games
-                - title: Basketball
-                  url: /basketball
+                - title: Fun
+                  url: /fun
             - title: Entertainment
               links:
                 - title: YouTube
