@@ -17,6 +17,10 @@
               show-flairs: true
 
             - type: reddit
+              subreddit: databasedevelopment
+              show-flairs: true
+
+            - type: reddit
               subreddit: sveltejs
               show-flairs: true
 
