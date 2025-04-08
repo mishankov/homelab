@@ -9,6 +9,7 @@
           repositories:
             - mishankov/logman
             - mishankov/testman
+            - mishankov/simple-system-monitor
 
         - type: group
           widgets:
