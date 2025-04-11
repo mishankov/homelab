@@ -50,8 +50,6 @@ services:
     container_name: web-tail
     ports:
       - ${WEBTAIL_PORT}:4444
-    environment:
-      - ASSETS=/app/dist/public
     volumes:
       - /var/log:/logs/system
       - ./config/web-tail/web-tail.config.toml:/app/web-tail.config.toml
