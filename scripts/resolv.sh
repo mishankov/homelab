@@ -20,8 +20,7 @@ else
     echo "nameserver 8.8.8.8" >> /etc/resolv.conf
     echo "nameserver 8.8.4.4" >> /etc/resolv.conf
     echo "DNS серверы 8.8.8.8 и 8.8.4.4 успешно добавлены"
+
+    sudo systemctl daemon-reload
+    sudo systemctl restart docker
 fi
-
-
-sudo systemctl daemon-reload
-sudo systemctl restart docker
