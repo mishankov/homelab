@@ -1,0 +1,16 @@
+body {
+  --bg: #1f2430;
+  --text: #cccac2;
+
+  --component-loadline-empty-color: #409fff40;
+  --component-loadline-filled-color: #ffcc66;
+  --component-loadline-height: 15px;
+  --component-loadline-width: 250px;
+
+  --component-card-backgroud-color: var(--bg);
+  --component-card-backgroud-border: 1px solid #409fff40;
+  --component-card-header-color: var(--text);
+
+  --body-background-color: var(--bg);
+  --body-text-color: var(--text);
+}

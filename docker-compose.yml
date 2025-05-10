@@ -65,6 +65,7 @@ services:
       - ./config/ssm/.env
     volumes:
       - /:/hostfs:ro
+      - ./config/ssm/user-assets:/app/user-assets:ro
     restart: 'unless-stopped'
 
   # https://github.com/glanceapp/glance
