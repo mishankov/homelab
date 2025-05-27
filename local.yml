@@ -1,0 +1,21 @@
+services:
+  proxymini:
+    container_name: proxymini
+    image: ghcr.io/mishankov/proxymini:main
+    ports:
+      - 14443:14443
+    volumes:
+      - ./config/proxymini/proxymini.conf.toml:/app/proxymini.conf.toml:ro
+      - ./data:/app/data:rw
+    restart: unless-stopped
+
+  glance:
+    container_name: glance
+    image: glanceapp/glance
+    volumes:
+      - ./config/glance/config:/app/config
+      - ./config/glance/assets:/app/assets
+    ports:
+      - 8484:8080
+    env_file: ./config/glance/.env
+    restart: unless-stopped
