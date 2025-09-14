@@ -3,6 +3,7 @@ services:
   web-tail:
     image: ghcr.io/mishankov/web-tail:main
     container_name: web-tail
+    platform: linux/x86_64
     ports:
       - ${WEBTAIL_PORT}:4444
     volumes:
