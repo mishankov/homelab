@@ -27,6 +27,7 @@ services:
   glance:
     container_name: glance
     image: glanceapp/glance
+    platform: linux/x86_64
     volumes:
       - ./config/glance/config:/app/config
       - ./config/glance/assets:/app/assets
