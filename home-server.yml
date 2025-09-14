@@ -1,16 +1,4 @@
 services:
-  # https://github.com/mishankov/web-tail
-  web-tail:
-    image: ghcr.io/mishankov/web-tail:main
-    container_name: web-tail
-    platform: linux/arm64
-    ports:
-      - ${WEBTAIL_PORT}:4444
-    volumes:
-      - /var/log:/logs/system
-      - ./config/web-tail/web-tail.config.toml:/app/web-tail.config.toml
-    restart: 'unless-stopped'
-
   # https://github.com/mishankov/simple-system-monitor
   ssm:
     image: ghcr.io/mishankov/simple-system-monitor:main
