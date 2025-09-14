@@ -2,3 +2,8 @@
 name = "syslog"
 type = "local:file"
 path = "/logs/system/syslog"
+
+[[sources]]
+name = "pihole"
+type = "local:file"
+path = "/logs/system/pihole/pihole.log"
