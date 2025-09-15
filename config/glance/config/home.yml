@@ -40,5 +40,13 @@
                   url: https://www.reddit.com/
             - title: Infra
               links:
+                - title: System monitor
+                  url: http://pi.local:44442
                 - title: Uptime
                   url: https://uptime.mishankov.dev/dashboard
+
+        - type: server-stats
+          css-class: "no-header"
+          servers:
+            - type: local
+              name: Server monitor

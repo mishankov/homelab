@@ -54,12 +54,3 @@
           feeds:
             - url: https://rssexport.rbc.ru/rbcnews/news/30/full.rss
               title: РБК
-
-- name: Homelab
-  columns:
-    - size: full
-      widgets:
-        - type: server-stats
-          servers:
-            - type: local
-              name: Server monitor
