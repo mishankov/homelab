@@ -56,7 +56,6 @@
               title: РБК
 
 - name: Homelab
-  width: slim
   columns:
     - size: full
       widgets:
@@ -64,23 +63,3 @@
           servers:
             - type: local
               name: Server monitor
-
-    - size: full
-      widgets:
-        - type: monitor
-          cache: 1m
-          title: Services
-          sites:
-            - title: Jellyfin
-              url: http://10.0.0.44:8096/
-              icon: si:jellyfin
-
-            - title: qBitorrent
-              url: http://10.0.0.44:8080/
-              icon: si:qbittorrent
-
-            - title: "Web-tail"
-              url: "http://10.0.0.44:4443/"
-
-            - title: "System monitor"
-              url: "http://10.0.0.44:44442/"
