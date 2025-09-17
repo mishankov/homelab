@@ -38,10 +38,16 @@
                   url: https://github.com/
                 - title: Reddit
                   url: https://www.reddit.com/
-            - title: Infra
+            - title: Local Infra
               links:
+                - title: Router
+                  url: http://192.168.1.1
+                - title: Pi-hole
+                  url: http://pi.local/admin
                 - title: System monitor
                   url: http://pi.local:44442
+            - title: Infra
+              links:
                 - title: Uptime
                   url: https://uptime.mishankov.dev/dashboard
 
@@ -49,4 +55,4 @@
           css-class: "no-header"
           servers:
             - type: local
-              name: Server monitor
+              name: Pi stats
