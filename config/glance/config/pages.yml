@@ -45,12 +45,16 @@
             - UC1CchA0SjApw4T-AYkN7ytg # IGM
             - UCOmAtwe8UxKuj-qIdV77Iog # xDlate
 
-- name: News
+- name: RSS
   columns:
     - size: full
       widgets:
         - type: rss
           title: RSS
+          style: detailed-list
           feeds:
-            - url: https://rssexport.rbc.ru/rbcnews/news/30/full.rss
-              title: РБК
+            - url: https://www.alexedwards.net/static/feed.rss
+              title: Alex Edwards
+
+            - url: https://www.joshwcomeau.com/rss.xml
+              title: Josh Comeau
