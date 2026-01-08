@@ -45,6 +45,13 @@
             - UC1CchA0SjApw4T-AYkN7ytg # IGM
             - UCOmAtwe8UxKuj-qIdV77Iog # xDlate
 
+        - type: videos
+          style: grid-cards
+          title: Science?
+          channels:
+            - UCK8xpGAv8Oz7iMPgMw9j0LA # Kuji
+            - UCMrD1wosgsUpu3AE7IlIjZQ # Вселенная Плюс
+
 - name: RSS
   columns:
     - size: full
