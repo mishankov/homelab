@@ -221,18 +221,35 @@ install_claude_code() {
 # ============================================================================
 install_docker() {
     echo_info "Installing Docker..."
-
+    
     if command -v docker &> /dev/null; then
         echo_warn "Docker is already installed: $(docker --version)"
     else
-        curl -fsSL https://get.docker.com -o get-docker.sh
-        sudo sh ./get-docker.sh --dry-run
-
-        sudo docker run hello-world
-
-        sudo groupadd docker
-        sudo usermod -aG docker $USER
-
+        # Install dependencies
+        sudo apt install -y apt-transport-https
+        
+        # Add Docker's official GPG key
+        sudo install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+            sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        sudo chmod a+r /etc/apt/keyrings/docker.gpg
+        
+        # Set up Docker repository
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+            https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+            sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        
+        # Install Docker
+        sudo apt update
+        sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        
+        # Add user to docker group
+        sudo usermod -aG docker "$USER"
+        
+        # Enable Docker service
+        sudo systemctl enable docker
+        sudo systemctl start docker
+        
         echo_info "Docker installed successfully!"
         echo_warn "You may need to log out and back in for docker group changes to take effect"
     fi
