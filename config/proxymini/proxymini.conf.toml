@@ -1,3 +1,0 @@
-[[proxy]]
-prefix = "/ollama"
-target = "http://host.docker.internal:11434"
