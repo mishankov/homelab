@@ -1,0 +1,27 @@
+services:
+  application:
+    build: ./pega/application
+    image: homelab-pega
+    container_name: homelab-pega
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent --max-time 10 http://localhost:8080/prweb/ >/dev/null"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 90s
+    environment:
+      - JDBC_URL=jdbc:postgresql://postgresql:5432/pega
+      - DB_USERNAME=pega
+      - DB_PASSWORD=rules
+      - DB_PORT=5432
+      - JAVA_OPTS=-Dpega.logdir=/usr/local/tomcat/logs/pega_logs
+      - NODE_TYPE=WebUser,BackgroundProcessing,Search
+    ports:
+      - "8080:8080"
+      - "8000:8000"
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy

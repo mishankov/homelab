@@ -27,3 +27,11 @@ docker compose -f compose.yml -f kafka/compose.yml up -d
 ```shell
 docker compose -f compose.yml -f pg/compose.yml up -d
 ```
+
+## Pega
+
+### Install
+
+```shell 
+docker compose -f compose.yml -f pg/compose.yml -f pega/compose.install.yml up --exit-code-from installer
+```
