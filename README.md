@@ -13,17 +13,17 @@ Stop after `setup-elk` service finishes
 ### Regular start
 
 ```shell
-docker compose -f compose.yml -f elk/compose.yml up
+docker compose -f compose.yml -f elk/compose.yml up -d
 ```
 
 ## Kafka
 
 ```shell
-docker compose -f compose.yml -f kafka/compose.yml up
+docker compose -f compose.yml -f kafka/compose.yml up -d
 ```
 
 ## PostgreSQL
 
 ```shell
-docker compose -f compose.yml -f pg/compose.yml up
+docker compose -f compose.yml -f pg/compose.yml up -d
 ```
