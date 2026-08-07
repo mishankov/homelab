@@ -1,2 +1,2 @@
-docker compose --profile "*" down
+docker compose down
 rm -rf data

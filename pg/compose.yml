@@ -1,6 +1,5 @@
 services:
   postgresql:
-    profiles: [pg, pega, install, all]
     image: ghcr.io/mishankov/postgres-pljava-openjdk:sha-19afbfa
     container_name: homelab-postgresql
     restart: unless-stopped

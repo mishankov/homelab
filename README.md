@@ -5,25 +5,25 @@
 ### First start (installation)
 
 ```shell
-docker compose up --exit-code-from setup-elk setup-elk
+./elk/install.sh
 ```
 
 ### Regular start
 
 ```shell
-docker compose --profile elk up -d
+./elk/up.sh
 ```
 
 ## Kafka
 
 ```shell
-docker compose --profile kafka up -d
+./kafka/up.sh
 ```
 
 ## PostgreSQL
 
 ```shell
-docker compose --profile pg up -d
+./pg/up.sh
 ```
 
 ## Pega
@@ -31,11 +31,11 @@ docker compose --profile pg up -d
 ### Install
 
 ```shell
-docker compose up --exit-code-from pega-installer pega-installer
+./pega/install.sh
 ```
 
 ### Regular start
 
 ```shell
-docker compose --profile pega up -d
+./pega/up.sh
 ```

@@ -1,6 +1,5 @@
 services:
   pega-installer:
-    profiles: [install]
     image: eclipse-temurin:11.0.31_11-jdk-jammy
     container_name: homelab-pega-installer
     command: ["./install-pega.sh"]
@@ -14,7 +13,6 @@ services:
         condition: service_healthy
 
   pega-app:
-    profiles: [pega, all]
     build: ./application
     image: homelab-pega
     container_name: homelab-pega

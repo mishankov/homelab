@@ -1,6 +1,5 @@
 services:
   setup-elk:
-    profiles: [install]
     image: docker.elastic.co/elasticsearch/elasticsearch:9.5.0
     container_name: homelab-setup-elk
     restart: no
@@ -20,7 +19,6 @@ services:
       '
 
   elasticsearch:
-    profiles: [elk, install, all]
     image: docker.elastic.co/elasticsearch/elasticsearch:9.5.0
     container_name: homelab-elasticsearch
     restart: unless-stopped
@@ -50,7 +48,6 @@ services:
       start_period: 30s
 
   kibana:
-    profiles: [elk, all]
     image: docker.elastic.co/kibana/kibana:9.5.0
     container_name: homelab-kibana
     restart: unless-stopped
