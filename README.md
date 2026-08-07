@@ -2,40 +2,30 @@
 
 ## ELK
 
-### First start (installation)
-
 ```shell
 ./elk/install.sh
-```
-
-### Regular start
-
-```shell
 ./elk/up.sh
+./elk/stop.sh
 ```
 
 ## Kafka
 
 ```shell
 ./kafka/up.sh
+./kafka/stop.sh
 ```
 
 ## PostgreSQL
 
 ```shell
 ./pg/up.sh
+./pg/stop.sh
 ```
 
 ## Pega
 
-### Install
-
 ```shell
 ./pega/install.sh
-```
-
-### Regular start
-
-```shell
 ./pega/up.sh
+./pega/stop.sh
 ```
