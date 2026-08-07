@@ -1,1 +1,7 @@
 name: homelab
+
+include:
+  - kafka/compose.yml
+  - pg/compose.yml
+  - pega/compose.yml
+  - elk/compose.yml

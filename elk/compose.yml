@@ -1,5 +1,26 @@
 services:
+  setup-elk:
+    profiles: [install]
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.0
+    container_name: homelab-setup-elk
+    restart: no
+    environment:
+      ELASTIC_PASSWORD: elastic
+      KIBANA_PASSWORD: kibana
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    command: >
+      bash -c '
+        until curl -fsS -u "elastic:$${ELASTIC_PASSWORD}" -H "Content-Type: application/json" -X POST http://elasticsearch:9200/_security/user/kibana_system/_password -d "{\"password\":\"$${KIBANA_PASSWORD}\"}";
+        do
+          echo "Waiting for the Elasticsearch security index...";
+          sleep 5;
+        done
+      '
+
   elasticsearch:
+    profiles: [elk, install, all]
     image: docker.elastic.co/elasticsearch/elasticsearch:9.5.0
     container_name: homelab-elasticsearch
     restart: unless-stopped
@@ -16,7 +37,7 @@ services:
     ports:
       - "9200:9200"
     volumes:
-      - ./data/elasticsearch:/usr/share/elasticsearch/data
+      - ../data/elasticsearch:/usr/share/elasticsearch/data
     healthcheck:
       test:
         [
@@ -29,6 +50,7 @@ services:
       start_period: 30s
 
   kibana:
+    profiles: [elk, all]
     image: docker.elastic.co/kibana/kibana:9.5.0
     container_name: homelab-kibana
     restart: unless-stopped

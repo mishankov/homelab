@@ -1,6 +1,21 @@
 services:
-  application:
-    build: ./pega/application
+  pega-installer:
+    profiles: [install]
+    image: eclipse-temurin:11.0.31_11-jdk-jammy
+    container_name: homelab-pega-installer
+    command: ["./install-pega.sh"]
+    volumes:
+      - ./distr:/distr
+      - ./application/postgresql-42.2.14.jar:/postgresql-42.2.14.jar
+      - ./installer/install-pega.sh:/install-pega.sh
+      - ./installer/init_pega.sql:/init_pega.sql
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+  pega-app:
+    profiles: [pega, all]
+    build: ./application
     image: homelab-pega
     container_name: homelab-pega
     restart: unless-stopped

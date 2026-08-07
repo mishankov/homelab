@@ -5,33 +5,37 @@
 ### First start (installation)
 
 ```shell
-docker compose -f compose.yml -f elk/compose.yml -f elk/compose.install.yml up --exit-code-from setup-elk setup-elk
+docker compose up --exit-code-from setup-elk setup-elk
 ```
-
-Stop after `setup-elk` service finishes
 
 ### Regular start
 
 ```shell
-docker compose -f compose.yml -f elk/compose.yml up -d
+docker compose --profile elk up -d
 ```
 
 ## Kafka
 
 ```shell
-docker compose -f compose.yml -f kafka/compose.yml up -d
+docker compose --profile kafka up -d
 ```
 
 ## PostgreSQL
 
 ```shell
-docker compose -f compose.yml -f pg/compose.yml up -d
+docker compose --profile pg up -d
 ```
 
 ## Pega
 
 ### Install
 
-```shell 
-docker compose -f compose.yml -f pg/compose.yml -f pega/compose.install.yml up --exit-code-from installer
+```shell
+docker compose up --exit-code-from pega-installer pega-installer
+```
+
+### Regular start
+
+```shell
+docker compose --profile pega up -d
 ```
