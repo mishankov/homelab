@@ -5,7 +5,7 @@ RUN mkdir prweb
 RUN unzip -q -o prweb.war -d /prweb
 
 
-FROM pegasystems/pega-ready:3.1.292
+FROM pegasystems/pega-ready:3-jdk21
 
 ENV JDBC_CLASS=org.postgresql.Driver
 
