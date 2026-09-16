@@ -1,1 +1,1 @@
-docker compose stop kibana elasticsearch
+docker compose stop kibana
