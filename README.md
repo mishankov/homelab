@@ -1,5 +1,22 @@
 # Homelab
 
+## OpenAlbert (Raspberry Pi)
+
+The existing installation on `mishankov@pi` is managed separately from the local
+homelab stack. Host settings and commands are in [openalbert](openalbert/README.md);
+the main Compose file is downloaded from OpenAlbert when explicitly requested.
+
+```shell
+./openalbert/sync.py
+./openalbert/up.sh
+./openalbert/stop.sh
+```
+
+Run these commands **on the Pi**, from a checkout of this repository. They use
+`~/openalbert/.env` and `~/openalbert/container_data`, preserving the existing
+Compose project and data paths. Sync only downloads configuration; it does not
+restart services.
+
 ## Camunda
 
 ```shell

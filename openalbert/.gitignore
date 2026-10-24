@@ -1,0 +1,5 @@
+.upstream/
+.env
+.env.*
+container_data/
+__pycache__/
