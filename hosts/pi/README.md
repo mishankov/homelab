@@ -3,6 +3,8 @@
 Observed over SSH on **2026-10-24**. This directory records the host behind the
 containers: boot settings, the custom VPN integration and recovery information.
 It does not automatically provision the machine or change running services.
+The optional [Docker maintenance timer](maintenance/README.md) is installed
+explicitly and performs scheduled cleanup once enabled.
 
 ## Inventory
 
@@ -64,6 +66,24 @@ was enabled but inactive, with no VNC TCP listener observed. These are candidate
 for a later headless-host decision if the desktop and peripherals are not needed;
 none were disabled during this inventory.
 
+## Administration
+
+[sudoers.d/99-homelab-mishankov-nopasswd](sudoers.d/99-homelab-mishankov-nopasswd)
+grants `mishankov` passwordless sudo for all commands. To install it on the Pi
+from the repository root, using existing sudo access for this first change:
+
+```sh
+sudo visudo -cf hosts/pi/sudoers.d/99-homelab-mishankov-nopasswd
+sudo install -o root -g root -m 440 hosts/pi/sudoers.d/99-homelab-mishankov-nopasswd /etc/sudoers.d/
+sudo visudo -c
+sudo -k
+sudo -n true
+```
+
+To revert, run `sudo rm /etc/sudoers.d/99-homelab-mishankov-nopasswd` while
+administrative access is still available. Subsequent sudo commands will use the
+remaining system policy.
+
 ## USB boot and replacing the disk
 
 [bootloader.conf](bootloader.conf) records the observed EEPROM settings.
@@ -82,6 +102,12 @@ been inspected or tested as a restore source. Do not flash EEPROM or reboot a
 remote recovery attempt without a way to reach the console or recovery media.
 
 ## Maintenance and recovery priorities
+
+Weekly Docker cleanup is defined in [maintenance](maintenance/README.md):
+`docker system prune --force --filter until=168h`, without `--all` or `--volumes`.
+The system timer runs on Sundays at 04:00 Europe/Moscow with up to 30 minutes of
+random delay and catches up missed runs after downtime. See its README for
+installation, logs, manual execution and disabling the timer.
 
 System timers cover APT maintenance, log rotation, filesystem trim/scrubbing,
 dpkg metadata and zram writeback. No user cron or user systemd timers were found,

@@ -1,0 +1,11 @@
+[Unit]
+Description=Weekly Docker cleanup on the Raspberry Pi
+
+[Timer]
+OnCalendar=Sun *-*-* 04:00:00 Europe/Moscow
+RandomizedDelaySec=30min
+Persistent=true
+Unit=homelab-docker-prune.service
+
+[Install]
+WantedBy=timers.target

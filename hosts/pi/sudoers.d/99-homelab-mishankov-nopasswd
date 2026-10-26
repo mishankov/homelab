@@ -1,0 +1,2 @@
+# Passwordless administration for the Raspberry Pi's primary user.
+mishankov ALL=(ALL:ALL) NOPASSWD: ALL

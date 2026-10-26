@@ -1,0 +1,12 @@
+[Unit]
+Description=Prune unused Docker objects older than seven days
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker --host unix:///var/run/docker.sock system prune --force --filter until=168h
+TimeoutStartSec=30min
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
