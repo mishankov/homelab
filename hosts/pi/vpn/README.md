@@ -25,8 +25,7 @@ and does not automatically restart a tunnel whose peer stops responding.
   template at `/usr/lib/systemd/system/awg-quick@.service`. The installed commands
   match that checkout's compiled `src/wg` and `src/wg-quick/linux.bash` respectively.
 - These commands are installed outside dpkg package ownership. `apt upgrade`
-  therefore does not manage their updates. Public executable fingerprints are
-  recorded in [installed.sha256](installed.sha256); rebuilt binaries may differ.
+  therefore does not manage their updates.
 - Required host facilities include TUN, `iproute2`, firewall tools and `openresolv`.
   The installed `awg-quick` reads `awg0` from
   `/etc/amnezia/amneziawg/awg0.conf`, a protected directory that was not read.

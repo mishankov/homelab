@@ -1,4 +1,0 @@
-# Installed ARM64 files on pi, 2026-10-24. Fingerprints, not upstream attestations.
-bd7fab6cde003f455053c7a2b46e16d347c19ac4bbedc3f5936346a0c1bcaf1a  /usr/local/bin/amneziawg-go
-ccdbf2a44f8b2ca5934c72a0609f91ea3d608e7119fcbadddbb855d6c78191e0  /usr/bin/awg
-f4bb0f5d63665ade87f0cb9f2185c43515cff09868637eb311f98f65a318722c  /usr/bin/awg-quick
