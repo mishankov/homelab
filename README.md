@@ -54,3 +54,12 @@ Kibana share Elasticsearch 8.14.3, available locally at `localhost:9200`.
 ./pega/up.sh
 ./pega/stop.sh
 ```
+
+## Hosts
+
+[Raspberry Pi](hosts/pi/README.md): hardware, USB boot, networking, AmneziaWG,
+recovery notes and a read-only status command:
+
+```shell
+./hosts/pi/status.sh
+```
