@@ -2,18 +2,18 @@
 
 ## OpenAlbert (Raspberry Pi)
 
-The existing installation on `mishankov@pi` is managed separately from the local
-homelab stack. Host settings and commands are in [openalbert](openalbert/README.md);
-the main Compose file comes from the existing installation in `~/openalbert`.
+OpenAlbert on `mishankov@pi` is managed separately from the local homelab stack.
+Host settings and commands are in [openalbert](openalbert/README.md); download the
+upstream Compose file into that directory before starting.
 
 ```shell
 ./openalbert/up.sh
 ./openalbert/stop.sh
 ```
 
-Run these commands **on the Pi**, from a checkout of this repository. They use
-`~/openalbert/.env` and `~/openalbert/container_data`, preserving the existing
-Compose project and data paths.
+Run these commands **on the Pi**, from this repository's root. Compose, private
+settings and data live under `openalbert/`; see its README for migrating the
+existing installation.
 
 ## Camunda
 
