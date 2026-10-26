@@ -1,0 +1,8 @@
+name: openalbert
+
+include:
+  - path:
+      - ${OPENALBERT_STATE_DIR:-${HOME}/openalbert}/compose.yaml
+      - ./compose.override.yaml
+    project_directory: ${OPENALBERT_STATE_DIR:-${HOME}/openalbert}
+    env_file: ${OPENALBERT_STATE_DIR:-${HOME}/openalbert}/.env

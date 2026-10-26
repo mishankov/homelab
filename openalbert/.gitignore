@@ -1,4 +1,3 @@
-.upstream/
 .env
 .env.*
 container_data/
