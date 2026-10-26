@@ -1,5 +1,0 @@
-services:
-  openalbert:
-    # Replace upstream's loopback binding rather than adding a conflicting port.
-    ports: !override
-      - "${OPENALBERT_BIND_ADDRESS:?Set OPENALBERT_BIND_ADDRESS}:${OPENALBERT_HTTP_PORT:-8080}:8080"
