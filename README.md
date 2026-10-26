@@ -1,5 +1,20 @@
 # Homelab
 
+## OpenAlbert (Raspberry Pi)
+
+OpenAlbert on `mishankov@pi` is managed separately from the local homelab stack.
+Host settings and commands are in [openalbert](openalbert/README.md); download the
+upstream Compose file into that directory before starting.
+
+```shell
+./openalbert/up.sh
+./openalbert/stop.sh
+```
+
+Run these commands **on the Pi**, from this repository's root. Compose, private
+settings and data live under `openalbert/`; see its README for migrating the
+existing installation.
+
 ## Camunda
 
 ```shell

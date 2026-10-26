@@ -1,0 +1,4 @@
+compose.yaml
+.env
+.env.*
+container_data/
