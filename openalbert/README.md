@@ -49,12 +49,3 @@ Compose file. Use these commands consistently: plain `docker compose` in the
 installation directory does not apply homelab's Pi settings or port override.
 For a new installation, prepare `~/openalbert` using the upstream instructions
 first. The scripts leave the private `.env` and upstream Compose file in place.
-
-## Verification
-
-```sh
-python3 -m unittest discover -s openalbert/tests -v
-```
-
-Tests render Compose with temporary paths and dummy credentials. They require
-the Compose CLI, without a running Docker daemon, and never read the live `.env`.
