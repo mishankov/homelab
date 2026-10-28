@@ -46,7 +46,9 @@ require(app["environment"]["COMPUTER_SSH_KEY_FILE"] == "/data/computer/id_ed2551
         "Wrong client key path")
 require(not app["environment"]["COMPUTER_SSH_PASSWORD"], "Key auth must not use a password")
 require("COMPUTER_SSH_KNOWN_HOSTS_FILE" not in app["environment"], "Legacy SSH setting")
-require("backup" not in services, "Unverified backup profile must not start by default")
+require("backup" in services, "Scheduled backups must be enabled")
+require(services["backup"]["environment"]["COMPOSE_PROFILES"] == "local-stt,backup",
+        "The backup controller needs the deployed profiles")
 require("computer-init" not in services, "SSH preparation must remain a manual installation step")
 require(app["ports"][0]["host_ip"] == "192.168.1.31", "Wrong inspector binding")
 require(services["postgres"]["ports"][0]["published"] == "15432", "Wrong PostgreSQL port")

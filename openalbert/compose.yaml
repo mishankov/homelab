@@ -30,6 +30,11 @@ services:
     stop_grace_period: 5m
     environment:
       BACKUP_CONTAINER: "true"
+      # The controller runs Compose inside /installation with the private .env.
+      # Preserve the public settings supplied by pi.env for image/profile lookup.
+      OPENALBERT_IMAGE_PREFIX: "${OPENALBERT_IMAGE_PREFIX:?Set OPENALBERT_IMAGE_PREFIX}"
+      OPENALBERT_IMAGE_TAG: "${OPENALBERT_IMAGE_TAG:?Set OPENALBERT_IMAGE_TAG}"
+      COMPOSE_PROFILES: "${COMPOSE_PROFILES:-}"
     tmpfs:
       - /tmp
     volumes:

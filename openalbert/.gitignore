@@ -3,3 +3,5 @@
 !.env.example
 container_data/
 backup-config/
+compose.backup-images.json
+compose.restore-images.json

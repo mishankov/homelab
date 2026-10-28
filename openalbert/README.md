@@ -109,6 +109,7 @@ repo_dir=/absolute/path/to/homelab
 (cd "$old_dir" && docker compose --env-file .env --env-file pi.env --profile '*' stop)
 install -m 600 "$old_dir/.env" "$repo_dir/openalbert/.env"
 sudo rsync -a --numeric-ids "$old_dir/container_data/" "$repo_dir/openalbert/container_data/"
+sudo rsync -a --numeric-ids "$old_dir/backup-config/" "$repo_dir/openalbert/backup-config/"
 cd "$repo_dir"
 docker compose --env-file openalbert/.env --env-file openalbert/pi.env -f openalbert/compose.yaml config -q
 docker compose --env-file openalbert/.env --env-file openalbert/pi.env -f openalbert/compose.yaml pull --ignore-buildable
@@ -148,26 +149,70 @@ To inspect the deployment:
 docker compose --env-file openalbert/.env --env-file openalbert/pi.env -f openalbert/compose.yaml ps
 ```
 
-## Backup status
+## Scheduled data backups
 
-The optional upstream `backup` service remains behind its profile. `pi.env`
-enables only `local-stt`; do not enable `backup` for this configuration yet.
-The upstream controller expects images that can be restored from registry digests;
-it does not save the locally built computer image. A local Docker digest alone
-does not make that image available from a registry during restoration.
+`pi.env` enables the `backup` profile together with `local-stt`. Prepare private
+`backup-config/config.json` and `backup-config/s3.json` using upstream's
+[backup instructions](https://github.com/mishankov/OpenAlbert/blob/master/docs/deployment.md#резервная-копия-и-восстановление).
+Set `enabled: true` in the private config. The current Pi schedule is 02:30
+Europe/Moscow with 14-day retention and a 60-second notice before stopping services.
+For a new installation without backup settings, temporarily run with
+`COMPOSE_PROFILES=local-stt` until these files are ready.
 
-Upstream fixed recovery for service names containing hyphens in `0f0aa6c`,
-including `log-gateway` and `temporal-ui`; that fix is included in the published
-`master` images verified for this configuration. An existing failed run's
-`resume.json` is not changed by checking out these repository files.
+The controller stops the running application services for a consistent cold copy,
+restarts them after creating the encrypted archive, uploads it to external S3 and
+checks the remote inventory. It keeps its own container running throughout.
+The archive contains PostgreSQL, MinIO, knowledge, `.env`, Compose, and all of
+`container_data/computer`: SSH keys, home, workspace, runner files and executions.
+It does not contain the computer image or writable system layer. Rebuilding the
+computer from the repository Dockerfile is the intended recovery procedure;
+programs installed interactively outside the data mounts are not backed up.
 
-Until local-image restoration is covered, use a consistent cold copy: stop the
-whole stack, copy `.env`, `pi.env`, `compose.yaml`, `computer/`, private backup
-settings and all `container_data/` with ownership and permissions preserved,
-then start it again. The computer's home, workspace, keys and runner state are in
-those bind mounts. Its system is rebuilt from the Dockerfile; installed packages
-outside the mounts are not part of the data copy. A restored installation needs
-the backed-up published image digests and a new local computer build.
+The current controller still requires local images to have a Docker RepoDigest.
+The Pi's Docker 29 containerd image store supplies one for the built computer;
+that local digest is recorded for provenance but is not a registry download.
+Recovery for service names containing hyphens was fixed upstream in `0f0aa6c`.
+
+Request a backup and inspect progress from the repository root:
+
+```sh
+docker compose --env-file openalbert/.env --env-file openalbert/pi.env -f openalbert/compose.yaml exec backup albert-backup request
+docker compose --env-file openalbert/.env --env-file openalbert/pi.env -f openalbert/compose.yaml logs --tail=50 backup
+```
+
+### Restore data with a fresh computer image
+
+Use the upstream restore command with the offline age identity to decrypt a copy
+into a new empty directory. Restore writes data and image overrides without
+starting services. Keep the offline identity and S3 credentials private.
+
+In a fresh checkout on the recovery host, copy the restored `.env`,
+`container_data/` and `compose.backup-images.json` into `openalbert/`, preserving
+owners and permissions. Review `pi.env` and the inspector binding for the new
+host. Recreate private `backup-config/` separately; it is not included in the
+archive. Do not start a second bot against the same Telegram token.
+
+Then, from the checkout root:
+
+```sh
+# Preserve registry digests for application services; omit the local computer digest.
+python3 openalbert/prepare-restore.py openalbert
+./openalbert/install.sh
+# Keep scheduled backups stopped until the restored installation is verified.
+export COMPOSE_PROFILES=local-stt
+docker compose --env-file openalbert/.env --env-file openalbert/pi.env -f openalbert/compose.yaml -f openalbert/compose.restore-images.json pull --ignore-buildable
+docker compose --env-file openalbert/.env --env-file openalbert/pi.env -f openalbert/compose.yaml -f openalbert/compose.restore-images.json build computer
+docker compose --env-file openalbert/.env --env-file openalbert/pi.env -f openalbert/compose.yaml -f openalbert/compose.restore-images.json up -d --no-build
+unset COMPOSE_PROFILES
+```
+
+`prepare-restore.py` leaves the original backup override untouched and writes
+`compose.restore-images.json`, removing only the computer's image override.
+The other services use the exact backed-up registry digests. The computer uses
+its normal local tag and build context, together with the restored data mounts.
+Use the restore overrides for the first start; routine `up.sh` uses current
+`master` tags. Verify the restored data and SSH access before enabling the backup
+profile again.
 
 ## Local checks
 
