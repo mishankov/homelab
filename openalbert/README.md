@@ -5,6 +5,10 @@ The tracked `compose.yaml` is based on OpenAlbert
 It runs Albert and its Ubuntu computer in the same `openalbert` Compose project.
 Albert uses the published `master` images; only the computer is built locally.
 
+For local code and documentation reference, see the upstream source submodule
+in [`../vendor/openalbert`](../vendor/openalbert). Initialization and update
+commands are in the [repository README](../README.md#openalbert-source).
+
 Run from this repository's root **on the Pi**:
 
 ```sh

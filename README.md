@@ -15,6 +15,26 @@ Run these commands **on the Pi**, from this repository's root. Compose, private
 settings and data live under `openalbert/`; see its README for migrating the
 existing installation.
 
+### OpenAlbert source
+
+The upstream [OpenAlbert](https://github.com/mishankov/OpenAlbert) source is
+available as a Git submodule in [`vendor/openalbert`](vendor/openalbert) for
+code and documentation reference. To populate it after cloning this repository:
+
+```shell
+git submodule update --init --recursive
+```
+
+The submodule is pinned to a commit. To advance it to the latest upstream
+`master` and record the new revision in this repository:
+
+```shell
+git submodule update --init --remote vendor/openalbert
+git add vendor/openalbert
+```
+
+Updating this reference checkout does not update the deployed Docker images.
+
 ## Camunda
 
 ```shell

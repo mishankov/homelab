@@ -1,0 +1,4 @@
+[submodule "vendor/openalbert"]
+	path = vendor/openalbert
+	url = https://github.com/mishankov/OpenAlbert.git
+	branch = master
