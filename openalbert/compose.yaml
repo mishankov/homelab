@@ -1,4 +1,4 @@
-# Based on OpenAlbert 0f0aa6ccdd63b23d3093567a92ed354726a718fd/deploy/compose.yaml.
+# Based on OpenAlbert c22c942f69f020d28ac39c6e4a6b4d424b442402/deploy/compose.yaml.
 # Pi deployment with a locally built Ubuntu computer in the same Compose project.
 # Docker Compose >= 2.23.1. See README.md before migrating an existing installation.
 # Set OPENALBERT_IMAGE_PREFIX and OPENALBERT_IMAGE_TAG in .env; see docs/deployment.md.

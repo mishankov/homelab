@@ -1,7 +1,7 @@
 # OpenAlbert on Raspberry Pi
 
 The tracked `compose.yaml` is based on OpenAlbert
-[`0f0aa6c`](https://github.com/mishankov/OpenAlbert/tree/0f0aa6ccdd63b23d3093567a92ed354726a718fd).
+[`c22c942`](https://github.com/mishankov/OpenAlbert/tree/c22c942f69f020d28ac39c6e4a6b4d424b442402).
 It runs Albert and its Ubuntu computer in the same `openalbert` Compose project.
 Albert uses the published `master` images; only the computer is built locally.
 
