@@ -1,7 +1,7 @@
 # OpenAlbert on Raspberry Pi
 
-The tracked `compose.yaml` is based on OpenAlbert
-[`0f0aa6c`](https://github.com/mishankov/OpenAlbert/tree/0f0aa6ccdd63b23d3093567a92ed354726a718fd).
+The tracked `compose.yaml` is based on OpenAlbert's
+[upstream Compose](https://github.com/mishankov/OpenAlbert/blob/master/deploy/compose.yaml).
 It runs Albert and its Ubuntu computer in the same `openalbert` Compose project.
 Albert uses the published `master` images; only the computer is built locally.
 
@@ -42,7 +42,7 @@ The image `homelab-openalbert-computer:ubuntu26.10` is built from the official
 `ubuntu:26.10` base. It includes SSH, Bash, Python, Git, curl and passwordless sudo
 for UID 10001 (`albert`). It contains no Albert runner or application credentials.
 The published Albert image installs and updates its matching runner over SSH.
-See upstream's [computer protocol](https://github.com/mishankov/OpenAlbert/blob/0f0aa6ccdd63b23d3093567a92ed354726a718fd/docs/computer.md).
+See upstream's [computer protocol](https://github.com/mishankov/OpenAlbert/blob/master/docs/computer.md).
 
 Albert connects as `albert@computer:22` on the private `computer` network, using
 `/data/computer/id_ed25519`. The SSH port is not published on the host. The client
@@ -175,7 +175,6 @@ programs installed interactively outside the data mounts are not backed up.
 The current controller still requires local images to have a Docker RepoDigest.
 The Pi's Docker 29 containerd image store supplies one for the built computer;
 that local digest is recorded for provenance but is not a registry download.
-Recovery for service names containing hyphens was fixed upstream in `0f0aa6c`.
 
 Request a backup and inspect progress from the repository root:
 
