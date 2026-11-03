@@ -1,5 +1,9 @@
 # OpenAlbert on Raspberry Pi
 
+A separate Railway deployment without STT is documented in
+[`railway/README.md`](railway/README.md). It has its own bot, credentials, data,
+and computer; the instructions below apply to the Pi installation.
+
 The tracked `compose.yaml` is based on OpenAlbert's
 [upstream Compose](https://github.com/mishankov/OpenAlbert/blob/master/deploy/compose.yaml).
 It runs Albert and its Ubuntu computer in the same `openalbert` Compose project.
@@ -21,6 +25,13 @@ Run `install.sh` explicitly to prepare SSH keys and directory permissions before
 the first start. `up.sh` does not generate keys or pull Albert images. `stop.sh` includes all profiles, including disabled STT and backup profiles.
 Both scripts use the private `.env` followed by tracked `pi.env`. Exported shell
 variables take Compose's usual precedence.
+
+`pi.env` enables `TELEGRAM_ALLOW_BOT_MESSAGES=true` in allowed Telegram groups.
+Bot participants use the same message handling as people. Enable Telegram's
+Bot-to-Bot Communication Mode and disable Group Privacy (or grant group admin
+rights) for the bots to receive each other's messages.
+Temporary progress status messages appear only in private chats; groups and
+group topics keep progress internal. Telegram's typing indicator still works.
 
 ## Configuration
 
