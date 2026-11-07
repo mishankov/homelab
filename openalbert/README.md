@@ -168,24 +168,27 @@ docker compose --env-file openalbert/.env --env-file openalbert/pi.env -f openal
 
 `pi.env` enables the `backup` profile together with `local-stt`. Prepare private
 `backup-config/config.json` and `backup-config/s3.json` using upstream's
-[backup instructions](https://github.com/mishankov/OpenAlbert/blob/master/docs/deployment.md#резервная-копия-и-восстановление).
-Set `enabled: true` in the private config. The current Pi schedule is 02:30
-Europe/Moscow with 14-day retention and a 60-second notice before stopping services.
+[backup instructions](../vendor/openalbert/docs/deployment.md#резервная-копия-и-восстановление).
+Set `enabled: true` and `exclude_computer: true` in the private config. The current
+Pi schedule is 02:30 Europe/Moscow with 14-day retention and a 60-second notice
+before stopping services.
 For a new installation without backup settings, temporarily run with
 `COMPOSE_PROFILES=local-stt` until these files are ready.
 
 The controller stops the running application services for a consistent cold copy,
 restarts them after creating the encrypted archive, uploads it to external S3 and
 checks the remote inventory. It keeps its own container running throughout.
-The archive contains PostgreSQL, MinIO, knowledge, `.env`, Compose, and all of
-`container_data/computer`: SSH keys, home, workspace, runner files and executions.
-It does not contain the computer image or writable system layer. Rebuilding the
-computer from the repository Dockerfile is the intended recovery procedure;
-programs installed interactively outside the data mounts are not backed up.
+The archive contains PostgreSQL, MinIO, knowledge, `.env` and Compose. The entire
+`container_data/computer` tree is excluded: SSH keys, home, workspace, runner files,
+executions, virtual environments and computer-only secrets are not backed up.
+The computer is a disposable working environment; save valuable results as Albert
+attachments or in another durable store. Exclusion does not delete any live files.
+The controller still pauses and resumes the whole project for the cold copy.
 
-The current controller still requires local images to have a Docker RepoDigest.
-The Pi's Docker 29 containerd image store supplies one for the built computer;
-that local digest is recorded for provenance but is not a registry download.
+The excluded computer's image digest is not required or recorded. Rebuild it from
+the repository Dockerfile, run `install.sh` to generate new SSH keys, and provision
+any needed tools and secrets again. Old backups that included computer data remain
+restorable. Application service images still require registry digests.
 
 Request a backup and inspect progress from the repository root:
 
@@ -194,11 +197,13 @@ docker compose --env-file openalbert/.env --env-file openalbert/pi.env -f openal
 docker compose --env-file openalbert/.env --env-file openalbert/pi.env -f openalbert/compose.yaml logs --tail=50 backup
 ```
 
-### Restore data with a fresh computer image
+### Restore application data with a fresh computer
 
-Use the upstream restore command with the offline age identity to decrypt a copy
-into a new empty directory. Restore writes data and image overrides without
-starting services. Keep the offline identity and S3 credentials private.
+Use the published backup controller's restore command with the offline age
+identity to decrypt a copy into a new empty directory. Use a controller version
+that supports `exclude_computer`; older releases reject that configuration field.
+Restore writes data and image overrides without starting services. Keep the offline
+identity and S3 credentials private.
 
 In a fresh checkout on the recovery host, copy the restored `.env`,
 `container_data/` and `compose.backup-images.json` into `openalbert/`, preserving
@@ -209,7 +214,7 @@ archive. Do not start a second bot against the same Telegram token.
 Then, from the checkout root:
 
 ```sh
-# Preserve registry digests for application services; omit the local computer digest.
+# Preserve application registry digests; also handle older copies with a computer digest.
 python3 openalbert/prepare-restore.py openalbert
 ./openalbert/install.sh
 # Keep scheduled backups stopped until the restored installation is verified.
