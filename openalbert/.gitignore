@@ -3,5 +3,7 @@
 !.env.example
 container_data/
 backup-config/
+backups/
+updates/
 compose.backup-images.json
 compose.restore-images.json

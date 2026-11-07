@@ -1,0 +1,4 @@
+interface:
+  display_name: "Обновление OpenAlbert"
+  short_description: "Обновление OpenAlbert на Pi с резервной копией"
+  default_prompt: "Используй $update-openalbert, чтобы обновить OpenAlbert на Pi до последней опубликованной версии."

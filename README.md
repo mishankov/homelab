@@ -15,6 +15,10 @@ Run these commands **on the Pi**, from this repository's root. Compose, private
 settings and data live under `openalbert/`; see its README for migrating the
 existing installation.
 
+The repository skill [update-openalbert](.agents/skills/update-openalbert/SKILL.md)
+updates the running Pi installation with published images, preserves its settings
+and computer, and verifies the deployment. Invoke it with `$update-openalbert`.
+
 ### OpenAlbert source
 
 The upstream [OpenAlbert](https://github.com/mishankov/OpenAlbert) source is

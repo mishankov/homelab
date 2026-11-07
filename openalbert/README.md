@@ -141,6 +141,12 @@ until application, SSH and file access have been checked.
 
 ## Updates
 
+Use the repository skill [update-openalbert](../.agents/skills/update-openalbert/SKILL.md)
+for routine updates of the running Pi installation. It selects changed published
+components, prepares a rollback copy and verifies the result while preserving the
+computer container. The full-stack commands below also build the computer;
+for a selective update, use the explicit service list from the update plan.
+
 The `master` tag is recorded in `pi.env`, overriding a legacy tag in private
 `.env`. An explicit `pull` fetches the current published `master` images; `up.sh`
 starts the images already available locally. For a future Albert update, compare
