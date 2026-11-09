@@ -21,8 +21,10 @@ Run from this repository's root **on the Pi**:
 ```
 
 `up.sh` builds the computer image before starting the stack with `--no-build`.
-Run `install.sh` explicitly to prepare SSH keys and directory permissions before
-the first start. `up.sh` does not generate keys or pull Albert images. `stop.sh` includes all profiles, including disabled STT and backup profiles.
+Before the first start, run `install.sh` to prepare SSH keys and directory
+permissions, then `install-storage.sh` to start MinIO and create its artifact
+bucket. `up.sh` does not generate keys, initialize the bucket or pull Albert
+images. `stop.sh` includes all profiles, including disabled STT and backup profiles.
 Both scripts use the private `.env` followed by tracked `pi.env`. Exported shell
 variables take Compose's usual precedence.
 
@@ -39,6 +41,7 @@ group topics keep progress internal. Telegram's typing indicator still works.
 - `.env`: private credentials; copy `.env.example` for a new installation.
 - `pi.env`: the `master` image tag, model, STT, SSH and other non-secret Pi settings.
 - `install.sh` and `installer/install-computer.sh`: explicit computer installation.
+- `install-storage.sh`: explicit, repeatable artifact bucket initialization.
 - `computer/`: Dockerfile, SSH configuration and SSH server entrypoint for Ubuntu 26.10.
 - `container_data/`: persistent application and computer data; ignored by Git.
 - `backup-config/`: private backup settings and S3 credentials; ignored by Git.
@@ -110,6 +113,25 @@ computer entrypoint; the entrypoint only starts the SSH server. Before an update
 stop the computer before rerunning installation to avoid changing permissions
 while it is using its files.
 
+## Storage installation
+
+After pulling the published images, initialize a new MinIO data directory:
+
+```sh
+./openalbert/install-storage.sh
+```
+
+The command starts MinIO, waits for its readiness check and runs `minio-init`
+as a temporary container removed on completion. It creates `S3_BUCKET` if missing;
+repeating it preserves the existing bucket and objects. Run it again when changing
+`S3_BUCKET` or replacing storage with an empty directory. Restoring an existing
+bucket from backup does not require initialization.
+
+`minio-init` belongs to the explicit `installation` profile. Normal startup,
+updates and backup recovery wait for healthy MinIO without requiring an old
+completed init container. The backend also checks that its bucket exists during
+startup; it does not create a missing bucket.
+
 ## Existing Pi installation
 
 Prepare the checkout before starting it. Back up the existing private settings,
@@ -130,7 +152,8 @@ docker compose --env-file openalbert/.env --env-file openalbert/pi.env -f openal
 docker compose --env-file openalbert/.env --env-file openalbert/pi.env -f openalbert/compose.yaml pull --ignore-buildable
 ```
 
-Run `./openalbert/install.sh`, then `./openalbert/up.sh`.
+Run `./openalbert/install.sh`, then `./openalbert/up.sh`. The copied MinIO data
+already contains the bucket and does not need storage initialization.
 
 Use an empty destination for the data copy. Keep this repository's tracked
 `compose.yaml` and `pi.env`; do not overwrite them with the old installation's
@@ -146,6 +169,8 @@ for routine updates of the running Pi installation. It selects changed published
 components, prepares a rollback copy and verifies the result while preserving the
 computer container. The full-stack commands below also build the computer;
 for a selective update, use the explicit service list from the update plan.
+Existing installations with an initialized bucket do not need `install-storage.sh`
+on updates or restarts.
 
 The `master` tag is recorded in `pi.env`, overriding a legacy tag in private
 `.env`. An explicit `pull` fetches the current published `master` images; `up.sh`
@@ -255,3 +280,13 @@ repeatable installation without key rotation or replacement of existing
 files after container recreation. It removes its containers, network,
 volumes and test image afterwards. It does not use private `.env`, real data,
 Telegram, an LLM or the Pi.
+
+Check storage installation, repeated initialization and cold restart without an
+init container using disposable data and synthetic credentials:
+
+```sh
+python3 openalbert/check-storage.py
+```
+
+The storage check uses the published MinIO images and removes its containers,
+network and volume afterwards. It supports `DOCKER_HOST` for a remote test daemon.

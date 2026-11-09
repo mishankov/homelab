@@ -202,16 +202,24 @@ services:
       - "127.0.0.1:9001:9001"
     volumes:
       - ./container_data/minio:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9000/minio/health/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
     logging: *logging
 
   minio-init:
+    # Explicit installation job; normal startup and backup recovery do not need it.
+    profiles: [installation]
     labels:
       compose_service: minio-init
     image: "${OPENALBERT_IMAGE_PREFIX:?Set OPENALBERT_IMAGE_PREFIX to ghcr.io/owner/repository}/minio-init:${OPENALBERT_IMAGE_TAG:?Set OPENALBERT_IMAGE_TAG to a published sha tag or master}"
     depends_on:
       minio:
-        condition: service_started
-    restart: on-failure
+        condition: service_healthy
+    restart: "no"
     environment:
       S3_ACCESS_KEY: "${S3_ACCESS_KEY:?Set S3_ACCESS_KEY in .env}"
       S3_SECRET_KEY: "${S3_SECRET_KEY:?Set S3_SECRET_KEY in .env}"
@@ -261,8 +269,8 @@ services:
         condition: service_healthy
       temporal:
         condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
+      minio:
+        condition: service_healthy
     environment:
       DATABASE_URL: "postgres://openalbert:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/openalbert?sslmode=disable"
       TEMPORAL_ADDRESS: temporal:7233
