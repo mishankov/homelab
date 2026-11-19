@@ -214,6 +214,13 @@ class WorkerTests(unittest.TestCase):
         self.assertFalse(any("stop" in args or "tag" in args or "up" in args for args in self.install.calls))
         self.assertFalse(list(self.install.root.iterdir()))
 
+    def test_backup_accepts_repo_digest_added_by_rollback_tag(self):
+        self.begin()
+        image_id = self.install.containers["openalbert"]["Image"]
+        self.install.images[image_id]["RepoDigests"].insert(0, "homelab-rollback/openalbert@" + target("openalbert")["digest"])
+        self.worker.backup({})
+        self.assertEqual(self.worker.record["phase"], "backup_verified")
+
     def test_runtime_drift_blocks_before_mutation(self):
         self.install.containers["openalbert"]["Config"]["Labels"]["com.docker.compose.config-hash"] = "changed"
         with self.assertRaisesRegex(update.Refused, "configuration drift"):
@@ -427,6 +434,28 @@ class PolicyTests(unittest.TestCase):
         plan.update(created_at=update.now().isoformat(), blockers=[{"reason": "schema change"}])
         with self.assertRaisesRegex(update.Refused, "Plan has blockers"):
             update.validate_plan(plan, "pi", Path("unused"))
+
+    def test_template_review_is_bound_to_plan_and_cannot_clear_schema_blockers(self):
+        service = "openalbert"
+        old = target(service, "a", OLD)
+        old_image = {"id": old["digest"], "revision": OLD, "source": ORIGIN,
+                     "platform": "linux/arm64", "digests": [old["repo"] + "@" + old["digest"]]}
+        blocker = {"service": service, "reason": update.STRUCTURAL_BLOCKER, "paths": ["deploy/compose.yaml"]}
+        plan = {"version": update.VERSION, "host": "pi", "created_at": update.now().isoformat(),
+                "baseline": {"images": {service: old["repo"] + ":master"},
+                             "containers": {service: {"image": old_image}}},
+                "changed": [service], "targets": {service: target(service)}, "blockers": [blocker]}
+        reviewed = update.fingerprint(plan)
+        with patch("update.command", return_value=ORIGIN.encode()), \
+                patch("update.source_guard", return_value=blocker["paths"]) as guard:
+            update.validate_plan(plan, "pi", Path("unused"), reviewed_plan=reviewed, review_reason="Same runtime default")
+            plan["created_at"] = update.now().isoformat()
+            with self.assertRaisesRegex(update.Refused, "exact plan fingerprint"):
+                update.validate_plan(plan, "pi", Path("unused"), reviewed_plan=reviewed, review_reason="Same runtime default")
+            blocker["paths"] = guard.return_value = ["schema.sql"]
+            with self.assertRaisesRegex(update.Refused, "require manual deployment"):
+                update.validate_plan(plan, "pi", Path("unused"), reviewed_plan=update.fingerprint(plan),
+                                     review_reason="Same runtime default")
 
     def test_missing_arm_manifest_refuses_registry_candidate(self):
         index = {"manifest": {"manifests": [{"platform": {"os": "linux", "architecture": "amd64"}}]},

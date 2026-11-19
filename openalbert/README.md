@@ -171,27 +171,39 @@ Python 3.9+, Docker CLI with Buildx, the initialized source submodule, BatchMode
 to `mishankov@pi`, and passwordless `sudo` on the Pi. The worker runs temporarily
 over SSH; registry credentials stay on the workstation.
 
-Create a plan, inspect its changed services and blockers, then apply that exact plan:
+Create a plan, inspect its changed services and blockers, then deploy that exact plan:
 
 ```sh
 python3 openalbert/update.py plan --output /tmp/openalbert-update-plan.json
-python3 openalbert/update.py apply --plan /tmp/openalbert-update-plan.json
+python3 openalbert/update.py deploy --plan /tmp/openalbert-update-plan.json
 ```
 
 `plan` inspects the running containers, their Compose/env file labels and config
 hashes, published `master` manifests and each component's ARM64 source revision.
 It does not pull images, stop services or call the LLM. It writes a credential-free
-plan, valid for two hours. Apply refuses configuration or container changes since
+plan, valid for two hours. Deploy refuses configuration or container changes since
 planning. `--host` and `--source`, when needed, go before the subcommand.
 
 The script only updates changed `openalbert`, `backup`, `stt` and `log-gateway`
-images. It refuses changed MinIO images, source changes to deployment configuration,
-SQL/schema/storage code, and backup implementation changes. These conservative
-checks identify cases for the manual skill; they do not prove that arbitrary
-source changes preserve data formats. The script keeps the current Compose and
-private settings, including the local computer and its data paths.
+images. Changed MinIO images, SQL/schema/storage code, and backup implementation
+changes still require a separate deployment. The current Compose and private
+settings stay in place, including the local computer and its data paths.
 
-Apply retains old image aliases, downloads pinned digests while the app is running,
+If the only blockers are changes to upstream Compose and environment templates,
+review the source diff between the running and target revisions for each affected
+component. Check that the deployed configuration still works and that the standard
+backup covers the changes. If both hold, pass the fingerprint printed by `plan`
+and record the reason without private configuration values:
+
+```sh
+python3 openalbert/update.py deploy --plan /tmp/openalbert-update-plan.json \
+  --reviewed-plan '<fingerprint>' \
+  --review-reason 'The new TELEGRAM_WIDGETS variable has the same default in the application'
+```
+
+The review is tied to the exact plan and recorded with the deployment.
+
+Deploy retains old image aliases, downloads pinned digests while the app is running,
 then pauses the backup controller and app under the shared backup lock. It creates
 a fresh logical application database dump and knowledge archive, verifies them,
 and starts only the selected services with `--no-deps --no-build --pull never`.
@@ -201,7 +213,7 @@ before its startup so its scheduler can initialize.
 
 A verified S3 backup from the last 36 hours, no active or queued cold backup,
 enough free space and at least ten minutes before the next scheduled backup are
-required. Apply sends two small test requests to the configured LLM, before and
+required. Deploy sends two small test requests to the configured LLM, before and
 after the update; these may use paid tokens. It also checks HTTP, dependency health,
 database row counts, knowledge/key hashes, S3 inventory/sample downloads, computer
 identity and SSH/Python/sudo, backup policy and remote copies, and new log errors.

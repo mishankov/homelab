@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plan and apply routine Pi updates using published, immutable ARM64 images.
+"""Plan and deploy routine Pi updates using published, immutable ARM64 images.
 
 The workstation owns registry credentials and the source checkout. A temporary
 SSH worker owns the deployment/backup locks and private installation data.
@@ -29,6 +29,8 @@ import uuid
 
 VERSION = 1
 ROUTINE = {"openalbert", "backup", "stt", "log-gateway"}
+REVIEWABLE_TEMPLATES = {".env.example", ".env.release.example", "deploy/compose.yaml", "deploy/compose.local.yaml"}
+STRUCTURAL_BLOCKER = "Structural source changes require manual review/deployment"
 SHA = re.compile(r"[0-9a-f]{40}")
 DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
 TERMINAL = {"idle", "completed", "failed"}
@@ -155,6 +157,20 @@ def registry_image(repo):
             "config_digest": raw["config"]["digest"], "revision": revision,
             "source": labels.get("org.opencontainers.image.source", ""),
             "download_bytes": sum(layer["size"] for layer in raw["layers"])}
+
+
+def same_installation(before, after):
+    # Docker adds a RepoDigest when we tag the old image for rollback.
+    def snapshot(baseline):
+        containers = {}
+        for service, container in baseline["containers"].items():
+            image = container["image"]
+            prefix = "homelab-rollback/" + service + "@"
+            digests = sorted(ref for ref in image["digests"] if not ref.startswith(prefix))
+            containers[service] = dict(container, image=dict(image, digests=digests))
+        return dict(baseline, containers=containers)
+
+    return snapshot(before) == snapshot(after)
 
 
 def image_matches(actual, target):
@@ -360,7 +376,7 @@ class Worker:
 
     def begin(self, args):
         plan = args["plan"]
-        require(plan["baseline"] == self.discover({}), "Installation changed since the plan; create a new plan")
+        require(same_installation(plan["baseline"], self.discover({})), "Installation changed since the plan; create a new plan")
         root = Path(args["backup_root"])
         require(root.is_absolute(), "Rollback directory must be absolute")
         require(not any(path.is_symlink() for path in [root] + list(root.parents)), "Symlink in backup path")
@@ -370,7 +386,7 @@ class Worker:
         root.mkdir(mode=0o700, parents=True, exist_ok=True)
         require(root.stat().st_mode & 0o077 == 0, "Backup root must have mode 0700")
         self.deployment_lock = self.lock(self.baseline["lock_path"])
-        require(plan["baseline"] == self.discover({}), "Installation changed while acquiring lock")
+        require(same_installation(plan["baseline"], self.discover({})), "Installation changed while acquiring lock")
         self.run_dir = root / (now().strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8])
         self.run_dir.mkdir(mode=0o700)
         self.plan = plan
@@ -472,7 +488,7 @@ class Worker:
 
     def backup(self, args):
         require(self.record.get("phase") == "prepared", "Unexpected backup phase")
-        require(self.baseline == self.discover({}), "Installation changed during image download")
+        require(same_installation(self.baseline, self.discover({})), "Installation changed during image download")
         for service in self.plan["changed"]:
             target = self.plan["targets"][service]
             require(image_matches(self.image(target["repo"] + "@" + target["digest"]), target),
@@ -647,6 +663,8 @@ class Worker:
                    "revisions": {s: self.plan["targets"][s]["revision"] for s in self.plan["changed"]},
                    "images": {s: self.image(containers[s]["Image"]) for s in self.plan["changed"]},
                    "warnings": self.baseline["warnings"], "checks": checks}
+        if "template_review" in self.plan:
+            receipt["template_review"] = self.plan["template_review"]
         write_json(self.run_dir / "verification.json", receipt)
         self.save("completed")
         return receipt
@@ -814,17 +832,23 @@ def make_plan(remote, host, source):
                     "Image source does not match the reviewed checkout")
             risky = source_guard(source, old["revision"], target["revision"], service)
             if risky:
-                blockers.append({"service": service, "reason": "Structural source changes require manual review/deployment", "paths": risky})
+                blockers.append({"service": service, "reason": STRUCTURAL_BLOCKER, "paths": risky})
         except Refused as error:
             blockers.append({"service": service, "reason": str(error)})
     return {"version": VERSION, "host": host, "created_at": now().isoformat(), "baseline": baseline,
             "targets": targets, "changed": sorted(changed), "blockers": blockers}
 
 
-def validate_plan(plan, host, source):
+def validate_plan(plan, host, source, *, reviewed_plan=None, review_reason=None):
     require(plan.get("version") == VERSION and plan.get("host") == host, "Plan version or host mismatch")
     require(dt.timedelta(0) <= now() - timestamp(plan["created_at"]) < dt.timedelta(hours=2), "Plan expired; create a new plan")
-    require(not plan["blockers"], "Plan has blockers; use the manual deployment skill")
+    reviewed = reviewed_plan is not None or review_reason is not None
+    if reviewed:
+        require(reviewed_plan == fingerprint(plan) and review_reason and review_reason.strip(),
+                "Review requires the exact plan fingerprint and a compatibility reason")
+    else:
+        require(not plan["blockers"], "Plan has blockers; review the templates or use manual deployment")
+    template_blockers = []
     require(set(plan["changed"]) <= ROUTINE, "Plan includes a storage or computer update")
     expected_changed = {s for s, target in plan["targets"].items()
                         if not image_matches(plan["baseline"]["containers"][s]["image"], target)}
@@ -832,17 +856,29 @@ def validate_plan(plan, host, source):
     for service in plan["changed"]:
         target = plan["targets"][service]
         expected_source = command(["git", "-C", str(source), "remote", "get-url", "origin"]).decode().strip().removesuffix(".git").lower()
-        require(target["source"].removesuffix(".git").lower() == expected_source, "Image source changed")
+        old = plan["baseline"]["containers"][service]["image"]
+        require(target["source"].removesuffix(".git").lower() == expected_source
+                and (old["source"] or "").removesuffix(".git").lower() == expected_source,
+                "Image source changed")
         require(all(DIGEST.fullmatch(target[field]) for field in ("digest", "arm_digest", "config_digest")), "Invalid image digest")
         require(target["repo"] + ":master" == plan["baseline"]["images"][service], "Image repository changed")
-        require(not source_guard(source, plan["baseline"]["containers"][service]["image"]["revision"], target["revision"], service),
-                "Structural changes require manual deployment")
+        risky = source_guard(source, old["revision"], target["revision"], service)
+        if risky:
+            require(reviewed and set(risky) <= REVIEWABLE_TEMPLATES,
+                    "Structural changes require manual deployment")
+            template_blockers.append({"service": service, "reason": STRUCTURAL_BLOCKER, "paths": risky})
+    require(sorted(plan["blockers"], key=lambda blocker: blocker["service"]) == template_blockers and (not reviewed or template_blockers),
+            "Review only covers the listed Compose and environment template changes")
 
 
-def apply_plan(remote, plan, args):
-    validate_plan(plan, args.host, args.source)
+def deploy_plan(remote, plan, args):
+    validate_plan(plan, args.host, args.source,
+                  reviewed_plan=args.reviewed_plan, review_reason=args.review_reason)
+    if args.reviewed_plan:
+        plan = dict(plan, template_review={"plan_fingerprint": args.reviewed_plan,
+                                           "reason": args.review_reason.strip()})
     if not plan["changed"]:
-        require(remote.call("discover") == plan["baseline"], "Installation changed since the plan")
+        require(same_installation(plan["baseline"], remote.call("discover")), "Installation changed since the plan")
         print("All running images already match the plan.", flush=True)
         return
     result = remote.call("begin", plan=plan, backup_root=args.backup_root)
@@ -868,10 +904,13 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="action", required=True)
     plan = sub.add_parser("plan", help="Read-only deployment/registry inspection; no pulls, pauses or LLM calls")
     plan.add_argument("--output", type=Path, required=True)
-    apply = sub.add_parser("apply", help="Apply an unexpired plan, including two small LLM requests")
-    apply.add_argument("--plan", type=Path, required=True)
-    apply.add_argument("--backup-root", default="/home/mishankov/openalbert-update-backups")
-    apply.add_argument("--wait-timeout", type=int, default=180)
+    deploy = sub.add_parser("deploy",
+                            help="Pull, back up, deploy and verify an unexpired plan")
+    deploy.add_argument("--reviewed-plan", metavar="FINGERPRINT", help="Exact plan fingerprint after template review")
+    deploy.add_argument("--review-reason", help="Why the existing configuration is compatible")
+    deploy.add_argument("--plan", type=Path, required=True)
+    deploy.add_argument("--backup-root", default="/home/mishankov/openalbert-update-backups")
+    deploy.add_argument("--wait-timeout", type=int, default=180)
     recover = sub.add_parser("recover", help="Restart exact originals after an interrupted pre-deployment copy")
     recover.add_argument("--run-dir", required=True)
     args = parser.parse_args(argv)
@@ -881,11 +920,11 @@ def main(argv=None):
         if args.action == "plan":
             result = make_plan(remote, args.host, args.source)
             write_json(args.output, result)
-            print(json.dumps({"plan": str(args.output), "changed": result["changed"], "blockers": result["blockers"],
+            print(json.dumps({"plan": str(args.output), "fingerprint": fingerprint(result), "changed": result["changed"], "blockers": result["blockers"],
                               "warnings": result["baseline"]["warnings"]}, indent=2))
             return 2 if result["blockers"] else 0
-        if args.action == "apply":
-            apply_plan(remote, read_json(args.plan), args)
+        if args.action == "deploy":
+            deploy_plan(remote, read_json(args.plan), args)
         else:
             print(json.dumps(remote.call("recover", run_dir=args.run_dir), indent=2))
         return 0
