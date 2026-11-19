@@ -165,10 +165,82 @@ until application, SSH and file access have been checked.
 ## Updates
 
 Use the repository skill [update-openalbert](../.agents/skills/update-openalbert/SKILL.md)
-for routine updates of the running Pi installation. It selects changed published
-components, prepares a rollback copy and verifies the result while preserving the
-computer container. The full-stack commands below also build the computer;
-for a selective update, use the explicit service list from the update plan.
+for updates of the running Pi installation. Routine image updates can use
+[`update.py`](update.py) from the workstation that has registry access. It needs
+Python 3.9+, Docker CLI with Buildx, the initialized source submodule, BatchMode SSH
+to `mishankov@pi`, and passwordless `sudo` on the Pi. The worker runs temporarily
+over SSH; registry credentials stay on the workstation.
+
+Create a plan, inspect its changed services and blockers, then apply that exact plan:
+
+```sh
+python3 openalbert/update.py plan --output /tmp/openalbert-update-plan.json
+python3 openalbert/update.py apply --plan /tmp/openalbert-update-plan.json
+```
+
+`plan` inspects the running containers, their Compose/env file labels and config
+hashes, published `master` manifests and each component's ARM64 source revision.
+It does not pull images, stop services or call the LLM. It writes a credential-free
+plan, valid for two hours. Apply refuses configuration or container changes since
+planning. `--host` and `--source`, when needed, go before the subcommand.
+
+The script only updates changed `openalbert`, `backup`, `stt` and `log-gateway`
+images. It refuses changed MinIO images, source changes to deployment configuration,
+SQL/schema/storage code, and backup implementation changes. These conservative
+checks identify cases for the manual skill; they do not prove that arbitrary
+source changes preserve data formats. The script keeps the current Compose and
+private settings, including the local computer and its data paths.
+
+Apply retains old image aliases, downloads pinned digests while the app is running,
+then pauses the backup controller and app under the shared backup lock. It creates
+a fresh logical application database dump and knowledge archive, verifies them,
+and starts only the selected services with `--no-deps --no-build --pull never`.
+The computer, PostgreSQL, Temporal and MinIO stay running. An unchanged app/controller
+is resumed using its original container. The backup controller's lock is released
+before its startup so its scheduler can initialize.
+
+A verified S3 backup from the last 36 hours, no active or queued cold backup,
+enough free space and at least ten minutes before the next scheduled backup are
+required. Apply sends two small test requests to the configured LLM, before and
+after the update; these may use paid tokens. It also checks HTTP, dependency health,
+database row counts, knowledge/key hashes, S3 inventory/sample downloads, computer
+identity and SSH/Python/sudo, backup policy and remote copies, and new log errors.
+Resource-limit warnings are included in the plan and report. MinIO's changing
+internal metadata is not treated as application data loss.
+
+Each run is stored outside the checkout in
+`/home/mishankov/openalbert-update-backups/<timestamp>-<id>/` (`0700`, private files
+`0600`). `status.json` records progress; `plan.json`, `backup-verified.json` and
+`verification.json` record the plan, copy and completed checks. Private configuration,
+dump, knowledge archive, rollback image override and failure logs remain on the Pi.
+Computer files, STT weights and existing logs are not copied into the data backup.
+Backups remain plaintext on disk under these private permissions; manage their
+retention separately from scheduled encrypted S3 backups.
+
+On a pre-deployment failure or a normal SSH disconnect, the worker starts the exact
+old paused containers with `docker start`, even if a local `master` tag moved.
+After a hard worker/machine failure, inspect `status.json` and recover a run that
+has not attempted a deployment:
+
+```sh
+python3 openalbert/update.py recover --run-dir /home/mishankov/openalbert-update-backups/<run>
+```
+
+`recover` refuses an active updater/backup, changed configuration, missing originals,
+or a run that has already attempted new containers. After a failed deployment,
+the script keeps private diagnostics and resumes originals which were never
+replaced. It does not retry the deployment or restore a live database. Use the
+manual skill to assess data compatibility and image rollback. Interrupted runs
+are recovered explicitly, never automatically re-applied.
+
+Run the isolated fault-injection tests without Docker, secrets, or SSH:
+
+```sh
+python3 -m unittest discover -s openalbert -p 'test_update.py' -v
+```
+
+The full-stack commands below also build the computer; routine updates use the
+selective script above.
 Existing installations with an initialized bucket do not need `install-storage.sh`
 on updates or restarts.
 
