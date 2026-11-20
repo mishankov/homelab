@@ -285,6 +285,7 @@ services:
       OPENAI_AUTH_MODE: profiles
       OPENAI_TOKEN_STORE: /data/chatgpt/credentials.json
       LLM_CONFIG_FILE: /etc/openalbert/models.toml
+      LLM_API_KEY: "${LLM_API_KEY:-}"
       STT_BASE_URL: "${STT_BASE_URL-http://stt:8080/v1}"
       STT_MODEL: "${STT_MODEL:-nemotron-3.5}"
       STT_API_KEY: "${STT_API_KEY:-}"

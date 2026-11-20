@@ -43,6 +43,8 @@ group topics keep progress internal. Telegram's typing indicator still works.
 - `models.toml` routes chat, background tasks and session analysis to GPT-6.1 Terra
   through the connected ChatGPT subscription. On a fresh installation, use
   `/chatgpt login` to connect the account. Credentials persist in `container_data/chatgpt/`.
+  The OpenCode Go DeepSeek profile starts with no roles assigned. OpenAlbert
+  validates all declared profiles at startup, so set `LLM_API_KEY` in the private `.env`.
 - `install.sh` and `installer/install-computer.sh`: explicit computer installation.
 - `install-storage.sh`: explicit, repeatable artifact bucket initialization.
 - `computer/`: Dockerfile, SSH configuration and SSH server entrypoint for Ubuntu 26.10.
