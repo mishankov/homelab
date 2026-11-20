@@ -39,9 +39,10 @@ group topics keep progress internal. Telegram's typing indicator still works.
 
 - `compose.yaml`: tracked service definitions, including `computer`.
 - `.env`: private credentials; copy `.env.example` for a new installation.
-- `pi.env`: the `master` image tag, model, STT, SSH and other non-secret Pi settings.
-- `models.toml` defines the LLM routes and model settings. The API key comes from
-  `LLM_API_KEY` in the private `.env`.
+- `pi.env`: the `master` image tag, STT, SSH and other non-secret Pi settings.
+- `models.toml` routes chat, background tasks and session analysis to GPT-6.1 Terra
+  through the connected ChatGPT subscription. On a fresh installation, use
+  `/chatgpt login` to connect the account. Credentials persist in `container_data/chatgpt/`.
 - `install.sh` and `installer/install-computer.sh`: explicit computer installation.
 - `install-storage.sh`: explicit, repeatable artifact bucket initialization.
 - `computer/`: Dockerfile, SSH configuration and SSH server entrypoint for Ubuntu 26.10.
@@ -103,6 +104,7 @@ restoring any existing data, before the first `up.sh`:
 
 The outer script runs the installer directly on the Linux host, elevating through
 sudo when needed. The host needs Bash and `ssh-keygen` from `openssh-client`.
+The installer also prepares the directory for the persistent ChatGPT sign-in.
 Installation works without Docker or a running computer and does not build images
 or start the stack; `up.sh` builds the computer separately.
 The installer creates missing client/server keys, authorizes the client key,

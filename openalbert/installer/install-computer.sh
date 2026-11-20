@@ -21,6 +21,7 @@ echo "Prepare computer directories"
 install -d -o 10001 -g 10001 -m 0700 "$COMPUTER_DIR/client"
 install -d -o 0 -g 0 -m 0755 "$COMPUTER_DIR/server"
 install -d -o 10001 -g 10001 -m 0755 "$COMPUTER_DIR/home" "$COMPUTER_DIR/workspace"
+install -d -o 10001 -g 10001 -m 0700 "$SCRIPT_DIR/../container_data/chatgpt"
 
 echo "Prepare SSH keys"
 if [[ ! -f "$CLIENT_KEY" ]]; then

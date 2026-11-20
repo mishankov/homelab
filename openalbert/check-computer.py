@@ -19,7 +19,7 @@ env = {key: value for key, value in os.environ.items() if key in {
 }}
 env.update(POSTGRES_PASSWORD="test-only-password", S3_ACCESS_KEY="test-access",
            S3_SECRET_KEY="test-only-secret", TELEGRAM_BOT_TOKEN="test-only-token",
-           TELEGRAM_ALLOWED_USER_IDS="123", LLM_API_KEY="test-only-key")
+           TELEGRAM_ALLOWED_USER_IDS="123")
 
 
 def run(*args, timeout=120):

@@ -1,18 +1,12 @@
 [routes]
-chat = "existing_api"
-background = "existing_api"
-analysis = "existing_api"
+chat = "terra"
+background = "terra"
+analysis = "terra"
 
-[profiles.existing_api]
-adapter = "openai_chat_completions"
-base_url = "https://opencode.ai/inference/go/openai/v1"
-model = "deepseek-v4.1-flash"
-api_key_env = "LLM_API_KEY"
+[profiles.terra]
+adapter = "openai_chatgpt"
+model = "gpt-6.1-terra"
 capabilities = ["tools", "vision", "structured_output"]
-context_window_tokens = 1000000
+context_window_tokens = 1050000
 max_output_tokens = 8192
 timeout = "120s"
-
-[profiles.existing_api.options]
-include_reasoning_content = true
-session_header = "x-opencode-session"
