@@ -284,6 +284,7 @@ services:
       TELEGRAM_ALLOW_BOT_MESSAGES: "${TELEGRAM_ALLOW_BOT_MESSAGES:-false}"
       LLM_BASE_URL: "${LLM_BASE_URL:-https://api.openai.com/v1}"
       LLM_API_KEY: "${LLM_API_KEY:?Set LLM_API_KEY in .env}"
+      LLM_CONFIG_FILE: /etc/openalbert/models.toml
       STT_BASE_URL: "${STT_BASE_URL-http://stt:8080/v1}"
       STT_MODEL: "${STT_MODEL:-nemotron-3.5}"
       STT_API_KEY: "${STT_API_KEY:-}"
@@ -318,6 +319,12 @@ services:
       - "192.168.1.31:8080:8080"
     volumes:
       - ./container_data/knowledge:/data/knowledge
+      - type: bind
+        source: ./models.toml
+        target: /etc/openalbert/models.toml
+        read_only: true
+        bind:
+          create_host_path: false
       - ./container_data/computer/client:/data/computer:ro
       - ./container_data/backup-state:/data/backup-state:ro
     logging: *logging

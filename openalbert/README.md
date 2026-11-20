@@ -40,6 +40,8 @@ group topics keep progress internal. Telegram's typing indicator still works.
 - `compose.yaml`: tracked service definitions, including `computer`.
 - `.env`: private credentials; copy `.env.example` for a new installation.
 - `pi.env`: the `master` image tag, model, STT, SSH and other non-secret Pi settings.
+- `models.toml` defines the LLM routes and model settings. The API key comes from
+  `LLM_API_KEY` in the private `.env`.
 - `install.sh` and `installer/install-computer.sh`: explicit computer installation.
 - `install-storage.sh`: explicit, repeatable artifact bucket initialization.
 - `computer/`: Dockerfile, SSH configuration and SSH server entrypoint for Ubuntu 26.10.
