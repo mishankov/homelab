@@ -39,9 +39,12 @@ group topics keep progress internal. Telegram's typing indicator still works.
 
 - `compose.yaml`: tracked service definitions, including `computer`.
 - `.env`: private credentials; copy `.env.example` for a new installation.
+- Store `OPENALBERT_PROXY_KEY` in the private `models.env` file with mode `0600`.
+  Use the LLM Proxy key for `Albert PI`.
 - `pi.env`: the `master` image tag, STT, SSH and other non-secret Pi settings.
 - `models.toml` routes chat, background tasks and session analysis to GPT-6.1 Terra
-  through the connected ChatGPT subscription. On a fresh installation, use
+  through the connected ChatGPT subscription and the
+  [LLM Proxy on foreign-server](../foreign-server/README.md). On a fresh installation, use
   `/chatgpt login` to connect the account. Credentials persist in `container_data/chatgpt/`.
   The OpenCode Go DeepSeek profile starts with no roles assigned. OpenAlbert
   validates all declared profiles at startup, so set `LLM_API_KEY` in the private `.env`.

@@ -1,6 +1,7 @@
 .env
 .env.*
 !.env.example
+models.env
 container_data/
 backup-config/
 backups/

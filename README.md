@@ -1,5 +1,9 @@
 # Homelab
 
+## LLM Proxy (foreign-server)
+
+[LLM Proxy and Caddy](foreign-server/README.md) run together on `foreign-server`.
+
 ## OpenAlbert (Raspberry Pi)
 
 OpenAlbert on `mishankov@pi` is managed separately from the local homelab stack.

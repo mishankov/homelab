@@ -271,6 +271,9 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+    env_file:
+      - path: ./models.env
+        required: false
     environment:
       DATABASE_URL: "postgres://openalbert:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/openalbert?sslmode=disable"
       TEMPORAL_ADDRESS: temporal:7233

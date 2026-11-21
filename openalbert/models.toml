@@ -5,11 +5,15 @@ analysis = "terra"
 
 [profiles.terra]
 adapter = "openai_chatgpt"
+base_url = "https://178.104.150.186/v1"
 model = "gpt-6.1-terra"
 capabilities = ["tools", "vision", "structured_output"]
 context_window_tokens = 1050000
 max_output_tokens = 8192
 timeout = "120s"
+
+[profiles.terra.headers_env]
+"X-LLM-Proxy-Key" = "OPENALBERT_PROXY_KEY"
 
 [profiles.deepseek]
 adapter = "openai_chat_completions"

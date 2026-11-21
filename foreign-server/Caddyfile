@@ -1,0 +1,14 @@
+{
+	# Clients connecting by IP can omit SNI.
+	default_sni 178.104.150.186
+}
+
+https://178.104.150.186 {
+	tls {
+		issuer acme https://acme-v02.api.letsencrypt.org/directory {
+			profile shortlived
+		}
+	}
+
+	reverse_proxy llm-proxy:8080
+}
