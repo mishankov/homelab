@@ -37,22 +37,42 @@ group topics keep progress internal. Telegram's typing indicator still works.
 
 ## Configuration
 
-- `compose.yaml`: tracked service definitions, including `computer`.
-- `.env`: private credentials; copy `.env.example` for a new installation.
-- Store `OPENALBERT_PROXY_KEY` in the private `models.env` file with mode `0600`.
-  Use the LLM Proxy key for `Albert PI`.
+- `compose.yaml`: tracked service definitions, including `computer` and the
+  usage-only LLM Meter relay.
+- `.env` holds private credentials and `LLM_METER_URL`, the dashboard's HTTPS
+  origin. Copy `.env.example` for a new installation.
+- `llm-meter.key`: a private file containing only a new dashboard client key
+  (`llmm_...`) for `Albert PI`. Remove the old `OPENALBERT_PROXY_KEY` entry from
+  `models.env` when switching to the relay. Keep any other model environment
+  settings in that file.
 - `pi.env`: the `master` image tag, STT, SSH and other non-secret Pi settings.
 - `models.toml` routes chat, background tasks and session analysis to GPT-6.1 Terra
-  through the connected ChatGPT subscription and the
-  [LLM Proxy on foreign-server](../foreign-server/README.md). On a fresh installation, use
-  `/chatgpt login` to connect the account. Credentials persist in `container_data/chatgpt/`.
-  The OpenCode Go DeepSeek profile starts with no roles assigned. OpenAlbert
-  validates all declared profiles at startup, so set `LLM_API_KEY` in the private `.env`.
+  through the connected ChatGPT subscription and the local relay's `/v1`
+  route, which forwards the subscription token to `api.openai.com`. On a fresh
+  installation, use `/chatgpt login` to connect the account. Credentials persist
+  in `container_data/chatgpt/`.
+  The OpenCode Go DeepSeek profile also uses the relay and starts with no roles
+  assigned. OpenAlbert validates all declared profiles at startup, so set
+  `LLM_API_KEY` in the private `.env`.
 - `install.sh` and `installer/install-computer.sh`: explicit computer installation.
 - `install-storage.sh`: explicit, repeatable artifact bucket initialization.
 - `computer/`: Dockerfile, SSH configuration and SSH server entrypoint for Ubuntu 26.10.
 - `container_data/`: persistent application and computer data; ignored by Git.
 - `backup-config/`: private backup settings and S3 credentials; ignored by Git.
+
+Before starting this configuration, follow the [LLM Meter server prerequisite](../README.md#llm-meter-relays).
+On the Pi, install the private key and prepare its persistent usage queue from
+the repository root:
+
+```sh
+sudo install -m 0600 -o 10001 -g 10001 /path/to/private/key openalbert/llm-meter.key
+sudo install -d -m 0700 -o 10001 -g 10001 openalbert/container_data/llm-meter-relay
+```
+
+OpenAlbert connects to the relay at `127.0.0.1:8765` in their shared network
+namespace. The relay checks the HTTP Host header against its loopback address.
+It publishes only the inspector port. Keep the relay key and queue directory
+available separately when restoring a backup.
 
 The inspector is bound to `192.168.1.31:8080` for trusted-LAN access at
 <http://192.168.1.31:8080/inspect/> without authentication. `INSPECTOR_PUBLIC_URL`

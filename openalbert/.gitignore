@@ -2,6 +2,7 @@
 .env.*
 !.env.example
 models.env
+llm-meter.key
 container_data/
 backup-config/
 backups/

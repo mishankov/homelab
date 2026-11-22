@@ -251,8 +251,46 @@ services:
     logging:
       driver: local
 
+  llm-meter-relay:
+    image: ghcr.io/mishankov/llm-meter-relay:latest
+    restart: unless-stopped
+    stop_grace_period: 15s
+    command:
+      - --mode=usage-only
+      - "--target=${LLM_METER_URL:?Set LLM_METER_URL in openalbert/.env}"
+      - --listen=127.0.0.1:8765
+      - --key-file=/run/secrets/proxy-key
+      - --data-dir=/data
+    networks:
+      default:
+        aliases: [openalbert]
+      computer:
+        aliases: [openalbert]
+    # OpenAlbert shares this namespace. Only its inspector is published.
+    ports:
+      - "192.168.1.31:8080:8080"
+    volumes:
+      - type: bind
+        source: ./llm-meter.key
+        target: /run/secrets/proxy-key
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./container_data/llm-meter-relay
+        target: /data
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: [CMD-SHELL, "wget -S -O /dev/null http://127.0.0.1:8765/codex 2>&1 | grep -q '401 Unauthorized'"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+    logging:
+      driver: local
+
   openalbert:
-    networks: [default, computer]
+    network_mode: service:llm-meter-relay
     labels:
       compose_service: openalbert
     image: "${OPENALBERT_IMAGE_PREFIX:?Set OPENALBERT_IMAGE_PREFIX to ghcr.io/owner/repository}/openalbert:${OPENALBERT_IMAGE_TAG:?Set OPENALBERT_IMAGE_TAG to a published sha tag or master}"
@@ -260,6 +298,9 @@ services:
     restart: unless-stopped
     init: true
     depends_on:
+      llm-meter-relay:
+        condition: service_healthy
+        restart: true
       computer:
         condition: service_healthy
       stt:
@@ -318,8 +359,6 @@ services:
       S3_BUCKET: "${S3_BUCKET:-openalbert}"
       S3_SECURE: "false"
       BACKUP_STATE_DIR: /data/backup-state
-    ports:
-      - "192.168.1.31:8080:8080"
     volumes:
       - ./container_data/knowledge:/data/knowledge
       - ./container_data/chatgpt:/data/chatgpt

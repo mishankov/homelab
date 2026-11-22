@@ -1,0 +1,29 @@
+name: llm-meter-local
+
+services:
+  llm-meter-relay:
+    image: ghcr.io/mishankov/llm-meter-relay:latest
+    user: "${LLM_METER_RELAY_UID:?Set LLM_METER_RELAY_UID to your UID}:${LLM_METER_RELAY_GID:?Set LLM_METER_RELAY_GID to your GID}"
+    restart: unless-stopped
+    stop_grace_period: 15s
+    command:
+      - --mode=usage-only
+      - "--target=${LLM_METER_URL:?Set LLM_METER_URL in llm-meter/.env}"
+      - --listen=127.0.0.1:8765
+      - --bind=0.0.0.0:8765
+      - --key-file=/run/secrets/proxy-key
+      - --data-dir=/data
+    ports:
+      - "127.0.0.1:8765:8765"
+    volumes:
+      - type: bind
+        source: ${HOME}/.config/llm-meter/relay/proxy.key
+        target: /run/secrets/proxy-key
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${HOME}/.config/llm-meter/relay/data
+        target: /data
+        bind:
+          create_host_path: false

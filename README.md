@@ -1,8 +1,42 @@
 # Homelab
 
-## LLM Proxy (foreign-server)
+## LLM Meter (foreign-server)
 
-[LLM Proxy and Caddy](foreign-server/README.md) run together on `foreign-server`.
+[LLM Meter and Caddy](foreign-server/README.md) run together on `foreign-server`.
+
+## LLM Meter relays
+
+The [workstation Compose project](llm-meter/compose.yaml) and the
+[OpenAlbert Pi stack](openalbert/README.md#configuration) each have a relay in
+`usage-only` mode. Model traffic goes directly to each provider. Both relays
+upload usage to the LLM Meter dashboard on `foreign-server`.
+
+Before starting the relays, upgrade `foreign-server` to an LLM Meter release
+that supports `POST /api/usage/events`. The old LLM Proxy server cannot ingest
+relay usage. The renamed server opens `llm-meter.db`, so the server upgrade must
+preserve the existing `llm-proxy.db` data.
+
+On this machine, create a private key file and a persistent queue directory:
+
+```sh
+relay_dir="$HOME/.config/llm-meter/relay"
+(umask 077; mkdir -p "$relay_dir/data"; touch "$relay_dir/proxy.key")
+chmod 600 "$relay_dir/proxy.key"
+```
+
+Save a new workstation dashboard client key (`llmm_...`) as the only line in
+`proxy.key`. Copy `llm-meter/.env.example` to `llm-meter/.env` and set
+`LLM_METER_URL` to the dashboard's HTTPS origin. From the repository root,
+start the relay with:
+
+```sh
+LLM_METER_RELAY_UID="$(id -u)" LLM_METER_RELAY_GID="$(id -g)" \
+  docker compose --env-file llm-meter/.env -f llm-meter/compose.yaml up -d
+```
+
+Use `http://127.0.0.1:8765` for Antigravity ACP, or append `/codex`,
+`/opencode-go`, or `/v1` for other clients. Each client keeps its usual provider
+credentials. See [LLM Meter's client configuration](https://github.com/mishankov/llm-meter/blob/main/docs/configuration.md#5-connect-clients).
 
 ## OpenAlbert (Raspberry Pi)
 

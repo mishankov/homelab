@@ -1,14 +1,14 @@
 name: foreign-server
 
 services:
-  llm-proxy:
-    image: ghcr.io/mishankov/llm-proxy:latest
+  llm-meter:
+    image: ghcr.io/mishankov/llm-meter:latest
     restart: unless-stopped
     environment:
       DASHBOARD_TOKEN: "${DASHBOARD_TOKEN:?Set DASHBOARD_TOKEN in the private env file}"
       COOKIE_SECURE: "true"
     volumes:
-      - llm-proxy-data:/data
+      - llm-meter-data:/data
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
       interval: 15s
@@ -19,8 +19,10 @@ services:
   caddy:
     image: caddy:2.11.9-alpine
     restart: unless-stopped
+    environment:
+      LLM_METER_ADDRESS: "${LLM_METER_ADDRESS:?Set LLM_METER_ADDRESS in the private env file}"
     depends_on:
-      llm-proxy:
+      llm-meter:
         condition: service_healthy
     ports:
       - "80:80"
@@ -32,7 +34,8 @@ services:
       - caddy-config:/config
 
 volumes:
-  llm-proxy-data:
+  llm-meter-data:
     external: true
+    name: llm-proxy-data
   caddy-data:
   caddy-config:

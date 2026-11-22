@@ -304,11 +304,14 @@ class Worker:
                     "Runtime configuration drift: " + service)
             require(container["Config"]["Labels"].get("com.docker.compose.project.config_files")
                     == ",".join(self.config_files), "Different Compose overrides: " + service)
-        ports = services["openalbert"].get("ports", [])
+        inspector_service = "openalbert"
+        if services["openalbert"].get("network_mode") == "service:llm-meter-relay":
+            inspector_service = "llm-meter-relay"
+        ports = services[inspector_service].get("ports", [])
         require(any(port.get("host_ip") == "192.168.1.31" and str(port.get("published")) == "8080"
                     and port["target"] == 8080 for port in ports), "Inspector LAN binding changed")
         for service, definition in services.items():
-            if service == "openalbert":
+            if service == inspector_service:
                 continue
             require(all(port.get("host_ip") == "127.0.0.1" for port in definition.get("ports", [])),
                     "Non-loopback service port: " + service)
