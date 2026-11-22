@@ -1,14 +1,14 @@
 {
 	# Clients connecting by IP can omit SNI.
-	default_sni 178.104.150.186
+	default_sni {$LLM_METER_ADDRESS}
 }
 
-https://178.104.150.186 {
+https://{$LLM_METER_ADDRESS} {
 	tls {
 		issuer acme https://acme-v02.api.letsencrypt.org/directory {
 			profile shortlived
 		}
 	}
 
-	reverse_proxy llm-proxy:8080
+	reverse_proxy llm-meter:8080
 }

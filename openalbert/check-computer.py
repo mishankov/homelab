@@ -38,9 +38,13 @@ base = ["docker", "compose", "--project-name", project,
 config = json.loads(run(*base, "config", "--format", "json"))
 services = config["services"]
 computer, app = services["computer"], services["openalbert"]
+relay = services["llm-meter-relay"]
 require(not computer.get("ports"), "Computer SSH must not be published")
 require(set(computer["networks"]) == {"computer"}, "Unexpected computer network")
-require(set(app["networks"]) == {"computer", "default"}, "Albert needs both networks")
+require(app["network_mode"] == "service:llm-meter-relay", "Albert needs the relay's loopback")
+require(set(relay["networks"]) == {"computer", "default"}, "Albert needs both networks")
+require(app["depends_on"]["llm-meter-relay"]["condition"] == "service_healthy",
+        "Albert must wait for the relay to listen")
 require(app["environment"]["COMPUTER_SSH_ADDRESS"] == "computer:22", "Wrong SSH address")
 require(app["environment"]["COMPUTER_SSH_KEY_FILE"] == "/data/computer/id_ed25519",
         "Wrong client key path")
@@ -50,7 +54,10 @@ require("backup" in services, "Scheduled backups must be enabled")
 require(services["backup"]["environment"]["COMPOSE_PROFILES"] == "local-stt,backup",
         "The backup controller needs the deployed profiles")
 require("computer-init" not in services, "SSH preparation must remain a manual installation step")
-require(app["ports"][0]["host_ip"] == "192.168.1.31", "Wrong inspector binding")
+require(not app.get("ports") and len(relay["ports"]) == 1, "Only the inspector may be published")
+inspector = relay["ports"][0]
+require(inspector["host_ip"] == "192.168.1.31" and inspector["published"] == "8080"
+        and inspector["target"] == 8080, "Wrong inspector binding")
 require(services["postgres"]["ports"][0]["published"] == "15432", "Wrong PostgreSQL port")
 all_profiles = json.loads(run(*base, "--profile", "*", "config", "--format", "json"))
 for component in ("openalbert", "backup", "stt", "log-gateway", "minio", "minio-init"):
