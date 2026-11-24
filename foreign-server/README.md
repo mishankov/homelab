@@ -45,10 +45,12 @@ meter_address=$(sed -n 's/^LLM_METER_ADDRESS=//p' ~/.local/state/llm-meter/docke
 curl --fail "https://$meter_address/healthz"
 ```
 
-The direct API routes are `/v1`, `/codex`, `/opencode-go`, and `/antigravity`.
+The direct API routes are `/v1` and `/antigravity`.
 Direct clients send `X-LLM-Meter-Key` alongside their upstream credentials.
-Usage-only relays upload to `/api/usage/events`. Issue new `llmm_...` keys for
-clients and relays after an upgrade from LLM Proxy. The `caddy-data` volume
+Relays upload usage to `/api/usage/events`, including
+[Codex and OpenCode telemetry](../README.md#macos-harness-telemetry).
+Issue new `llmm_...` keys for clients and relays after an upgrade from LLM
+Proxy. The `caddy-data` volume
 holds Caddy's ACME account and certificates across container recreation.
 
 ## Roll back the LLM Meter migration

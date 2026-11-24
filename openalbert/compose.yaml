@@ -282,7 +282,7 @@ services:
         bind:
           create_host_path: false
     healthcheck:
-      test: [CMD-SHELL, "wget -S -O /dev/null http://127.0.0.1:8765/codex 2>&1 | grep -q '401 Unauthorized'"]
+      test: [CMD-SHELL, "wget -S -O /dev/null http://127.0.0.1:8765/v1 2>&1 | grep -q '401 Unauthorized'"]
       interval: 5s
       timeout: 3s
       retries: 6

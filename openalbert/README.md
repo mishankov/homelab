@@ -51,9 +51,9 @@ group topics keep progress internal. Telegram's typing indicator still works.
   route, which forwards the subscription token to `api.openai.com`. On a fresh
   installation, use `/chatgpt login` to connect the account. Credentials persist
   in `container_data/chatgpt/`.
-  The OpenCode Go DeepSeek profile also uses the relay and starts with no roles
-  assigned. OpenAlbert validates all declared profiles at startup, so set
-  `LLM_API_KEY` in the private `.env`.
+  The optional DeepSeek profile connects directly to OpenCode Go and has no
+  roles assigned by default. Its requests bypass LLM Meter. OpenAlbert validates
+  all declared profiles at startup, so set `LLM_API_KEY` in the private `.env`.
 - `install.sh` and `installer/install-computer.sh`: explicit computer installation.
 - `install-storage.sh`: explicit, repeatable artifact bucket initialization.
 - `computer/`: Dockerfile, SSH configuration and SSH server entrypoint for Ubuntu 26.10.

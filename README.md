@@ -6,37 +6,67 @@
 
 ## LLM Meter relays
 
-The [workstation Compose project](llm-meter/compose.yaml) and the
-[OpenAlbert Pi stack](openalbert/README.md#configuration) each have a relay in
-`usage-only` mode. Model traffic goes directly to each provider. Both relays
-upload usage to the LLM Meter dashboard on `foreign-server`.
+The macOS desktop relay collects OpenTelemetry from Codex and OpenCode. The
+[OpenAlbert Pi stack](openalbert/README.md#configuration) meters model requests
+through its own `usage-only` relay. Both relays upload usage to the LLM Meter
+dashboard on `foreign-server`.
 
 Before starting the relays, upgrade `foreign-server` to an LLM Meter release
 that supports `POST /api/usage/events`. The old LLM Proxy server cannot ingest
 relay usage. The renamed server opens `llm-meter.db`, so the server upgrade must
 preserve the existing `llm-proxy.db` data.
 
-On this machine, create a private key file and a persistent queue directory:
+### macOS harness telemetry
 
-```sh
-relay_dir="$HOME/.config/llm-meter/relay"
-(umask 077; mkdir -p "$relay_dir/data"; touch "$relay_dir/proxy.key")
-chmod 600 "$relay_dir/proxy.key"
+In the [LLM Meter Relay desktop app](https://github.com/mishankov/llm-meter/tree/main/desktop),
+enter the dashboard's HTTPS origin and a workstation client key. Enable
+**OpenTelemetry** at `127.0.0.1:4318`, keep **Model proxy** off, and leave the
+local TLS fields blank for HTTP on loopback. Save and start the relay. The
+relay uploads usage to the dashboard over HTTPS and stores its client key in
+macOS Keychain.
+
+#### Codex
+
+Remove the old `openai_base_url` override if it points to the retired `/codex`
+proxy. Merge the settings below into `~/.codex/config.toml` and start a fresh
+Codex session.
+
+```toml
+[otel]
+exporter = { otlp-http = { endpoint = "http://127.0.0.1:4318/v1/logs", protocol = "json" } }
+log_user_prompt = false
+log_agent_responses = false
+log_guardian_assessments = false
+log_sse_deltas = false
+tool_result.max_bytes = 0
 ```
 
-Save a new workstation dashboard client key (`llmm_...`) as the only line in
-`proxy.key`. Copy `llm-meter/.env.example` to `llm-meter/.env` and set
-`LLM_METER_URL` to the dashboard's HTTPS origin. From the repository root,
-start the relay with:
+#### OpenCode
+
+Remove the old `openai` and `opencode-go` `baseURL` overrides from
+`~/.config/opencode/opencode.jsonc` if they point to the retired proxy routes.
+Run these commands to configure the shared background server used by the CLI.
 
 ```sh
-LLM_METER_RELAY_UID="$(id -u)" LLM_METER_RELAY_GID="$(id -g)" \
-  docker compose --env-file llm-meter/.env -f llm-meter/compose.yaml up -d
+opencode service set env OTEL_EXPORTER_OTLP_ENDPOINT http://127.0.0.1:4318
+opencode service start
 ```
 
-Use `http://127.0.0.1:8765` for Antigravity ACP, or append `/codex`,
-`/opencode-go`, or `/v1` for other clients. Each client keeps its usual provider
-credentials. See [LLM Meter's client configuration](https://github.com/mishankov/llm-meter/blob/main/docs/configuration.md#5-connect-clients).
+OpenCode saves the setting in `~/.config/opencode/service.json` and appends the
+signal paths to the OTLP origin. With **Server URL** blank, T3 Code launches its
+own OpenCode server. Set `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318`
+in the T3 Code OpenCode provider's environment as well. When T3 Code connects
+to the shared server through **Server URL**, the shared server's setting is
+sufficient.
+
+#### Verify usage
+
+Send a short prompt from each harness, then check **Usage** in the LLM Meter
+dashboard for `/codex/telemetry` and `/opencode/telemetry` records under the
+workstation client. OpenCode can take a few seconds to export a batch.
+
+See the [LLM Meter OpenTelemetry guide](https://github.com/mishankov/llm-meter/blob/main/docs/configuration.md#53-opentelemetry)
+for other harnesses and exporter settings.
 
 ## OpenAlbert (Raspberry Pi)
 
