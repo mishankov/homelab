@@ -85,7 +85,7 @@ class Installation:
                       "com.docker.compose.project.config_files": config_files,
                       "com.docker.compose.project.environment_file": env_files,
                       "com.docker.compose.config-hash": self.hashes[service]}
-            self.containers[service] = {"Id": "old-" + service, "Image": image_id, "RestartCount": 0,
+            self.containers[service] = {"Id": "old-" + service, "Name": "/openalbert-" + service + "-1", "Image": image_id, "RestartCount": 0,
                                         "Config": {"Labels": labels, "Env": [k + "=" + v for k, v in definition["environment"].items()]},
                                         "State": {"Running": True, "Status": "running", "ExitCode": 0,
                                                   "StartedAt": "2026-01-01T00:00:00Z", "Health": {"Status": "healthy"}},
@@ -124,6 +124,10 @@ class Installation:
                 if "--hash" in args:
                     return "\n".join(s + " " + h for s, h in self.hashes.items()).encode()
                 return update.canonical(self.config) if "--format" in args else b""
+            if "--dry-run" in args:
+                service = args[-1]
+                action = getattr(self, "dry_run_action", {}).get(service, "Running")
+                return f" Container openalbert-{service}-1 {action} \n".encode()
             # Services follow the explicit wait-timeout value.
             services = args[args.index("--wait-timeout") + 2:]
             for s in services:
@@ -225,6 +229,56 @@ class WorkerTests(unittest.TestCase):
         self.install.containers["openalbert"]["Config"]["Labels"]["com.docker.compose.config-hash"] = "changed"
         with self.assertRaisesRegex(update.Refused, "configuration drift"):
             self.begin()
+
+    def test_service_network_mode_hash_mismatch_uses_dry_run_verification(self):
+        self.install.config["services"]["openalbert"]["network_mode"] = "service:llm-meter-relay"
+        self.install.config["services"]["llm-meter-relay"] = {
+            "image": "ghcr.io/example/llm-meter-relay:latest", "volumes": [], "environment": {},
+            "ports": self.install.config["services"]["openalbert"].pop("ports"),
+        }
+        self.install.hashes["llm-meter-relay"] = "hash-llm-meter-relay"
+        relay_labels = copy.deepcopy(self.install.containers["openalbert"]["Config"]["Labels"])
+        relay_labels["com.docker.compose.service"] = "llm-meter-relay"
+        relay_labels["com.docker.compose.config-hash"] = "hash-llm-meter-relay"
+        self.install.images["old-image-llm-meter-relay"] = self.install.image_record("old-image-llm-meter-relay", target("llm-meter-relay", "a", OLD))
+        self.install.containers["llm-meter-relay"] = {
+            "Id": "old-llm-meter-relay", "Name": "/openalbert-llm-meter-relay-1", "Image": "old-image-llm-meter-relay",
+            "RestartCount": 0, "Config": {"Labels": relay_labels, "Env": []},
+            "State": {"Running": True, "Status": "running", "ExitCode": 0, "StartedAt": "2026-01-01T00:00:00Z", "Health": {"Status": "healthy"}},
+            "NetworkSettings": {"Networks": {}},
+        }
+        self.install.containers["openalbert"]["Config"]["Labels"]["com.docker.compose.config-hash"] = "compose-v5-service-net-hash"
+        self.install.dry_run_action = {"openalbert": "Running"}
+        baseline = self.worker.discover({})
+        self.assertIn("openalbert", baseline["containers"])
+        self.install.dry_run_action = {"openalbert": "Recreate"}
+        with self.assertRaisesRegex(update.Refused, "configuration drift"):
+            self.worker.discover({})
+
+    def test_profiles_llm_probe_verifies_models_credentials_and_relay(self):
+        models_file = self.install.project / "models.toml"
+        models_file.write_text(
+            '[routes]\nchat = "openai/gpt-6.1-terra"\n\n'
+            '[providers.openai]\nadapter = "openai_chatgpt"\nbase_url = "http://127.0.0.1:8765/v1"\n'
+        )
+        chatgpt_dir = self.install.project / "container_data/chatgpt"
+        chatgpt_dir.mkdir(parents=True)
+        creds_file = chatgpt_dir / "credentials.json"
+        update.write_json(creds_file, {"access_token": SECRET})
+        app_cfg = self.install.config["services"]["openalbert"]
+        app_cfg["environment"].update(OPENAI_AUTH_MODE="profiles", LLM_CONFIG_FILE="/etc/openalbert/models.toml",
+                                      OPENAI_TOKEN_STORE="/data/chatgpt/credentials.json")
+        app_cfg["volumes"].extend([
+            {"source": str(models_file), "target": "/etc/openalbert/models.toml", "type": "bind"},
+            {"source": str(chatgpt_dir), "target": "/data/chatgpt", "type": "bind"},
+        ])
+        self.install.containers["openalbert"]["Config"]["Env"] = [k + "=" + v for k, v in app_cfg["environment"].items()]
+        self.worker.discover({})
+        result = self.worker.probe_llm()
+        self.assertEqual(result, {"status": 200, "mode": "profiles", "adapter": "openai_chatgpt", "route": "openai/gpt-6.1-terra"})
+        update.write_json(creds_file, {})
+        with self.assertRaisesRegex(update.Refused, "credentials are empty"):
+            self.worker.probe_llm()
 
     def test_stale_plan_blocks_before_tagging(self):
         self.install.containers["computer"]["State"]["StartedAt"] = "changed"

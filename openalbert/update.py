@@ -28,7 +28,7 @@ import uuid
 
 
 VERSION = 1
-ROUTINE = {"openalbert", "backup", "stt", "log-gateway"}
+ROUTINE = {"openalbert", "backup", "stt", "tts", "log-gateway"}
 REVIEWABLE_TEMPLATES = {".env.example", ".env.release.example", "deploy/compose.yaml", "deploy/compose.local.yaml"}
 STRUCTURAL_BLOCKER = "Structural source changes require manual review/deployment"
 SHA = re.compile(r"[0-9a-f]{40}")
@@ -90,7 +90,7 @@ def read_json(path):
     return json.loads(Path(path).read_text())
 
 
-def command(args, *, timeout=120, input=None, stdin=None, stdout=None):
+def command(args, *, timeout=120, input=None, stdin=None, stdout=None, include_stderr=False):
     """Never propagate stderr/CalledProcessError: it may contain credentials."""
     try:
         result = subprocess.run(args, input=input, stdin=stdin, stdout=stdout or subprocess.PIPE,
@@ -105,6 +105,8 @@ def command(args, *, timeout=120, input=None, stdin=None, stdout=None):
         failure = Refused("Command failed: " + Path(args[0]).name + " (exit %d)" % result.returncode)
         failure.diagnostics = (result.stdout or b"") + result.stderr
         raise failure
+    if include_stderr:
+        return (result.stdout or b"") + (result.stderr or b"")
     return result.stdout or b""
 
 
@@ -197,6 +199,47 @@ def http_json(url, *, data=None, headers=None, method=None, timeout=30):
         raise Refused("HTTP check failed (status %d)" % error.code) from None
     except (OSError, ValueError):
         raise Refused("HTTP check failed (connection or response)") from None
+
+
+def parse_toml(text):
+    try:
+        import tomllib
+        return tomllib.loads(text)
+    except ModuleNotFoundError:
+        pass
+    data, section = {}, None
+    for raw_line in text.splitlines():
+        line = raw_line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            section = data
+            for part in re.findall(r'"[^"]*"|[^.]+', line[1:-1].strip()):
+                key = part.strip().strip('"')
+                section = section.setdefault(key, {})
+            continue
+        if "=" in line and section is not None:
+            key, value = (item.strip() for item in line.split("=", 1))
+            if value.startswith('"') and value.endswith('"'):
+                value = value[1:-1]
+            section[key.strip('"')] = value
+    return data
+
+
+def host_path_for_container(service_config, container_path):
+    target = Path(container_path)
+    best = None
+    for mount in service_config.get("volumes", []):
+        if mount.get("type") != "bind":
+            continue
+        mount_target = Path(mount["target"])
+        try:
+            rel = target.relative_to(mount_target)
+        except ValueError:
+            continue
+        if best is None or len(mount_target.parts) > len(best[0].parts):
+            best = (mount_target, Path(mount["source"]) / rel)
+    return best[1] if best else None
 
 
 def llm_probe(env):
@@ -300,7 +343,7 @@ class Worker:
                 continue
             require(state["Running"] and state.get("Health", {}).get("Status", "healthy") == "healthy",
                     "Service is not ready: " + service)
-            require(container["Config"]["Labels"].get("com.docker.compose.config-hash") == hashes[service],
+            require(self.matches_compose_config(service, container, hashes[service], services[service]),
                     "Runtime configuration drift: " + service)
             require(container["Config"]["Labels"].get("com.docker.compose.project.config_files")
                     == ",".join(self.config_files), "Different Compose overrides: " + service)
@@ -415,10 +458,79 @@ class Worker:
         download = sum(plan["targets"][s]["download_bytes"] for s in plan["changed"])
         require(shutil.disk_usage(self.directory).free >= download * 2 + 2 * 1024**3,
                 "Insufficient space for image download and extraction")
-        self.checks = {"llm_before": llm_probe(self.app_env()), "s3_backup_before": self.remote_copies(),
+        self.checks = {"llm_before": self.probe_llm(), "s3_backup_before": self.remote_copies(),
                        "computer_before": self.computer_probe()}
         self.logs_before = {s: error_signatures(self.logs(s, "10m")) for s in plan["changed"]}
         return {"backup_dir": str(self.run_dir)}
+
+    def matches_compose_config(self, service, container, expected_hash, definition):
+        if container["Config"]["Labels"].get("com.docker.compose.config-hash") == expected_hash:
+            return True
+        # Docker Compose v5 can emit a different config-hash for services using
+        # network_mode: service:<other> than `compose config --hash` computes.
+        if not str(definition.get("network_mode") or "").startswith("service:"):
+            return False
+        env = dict(value.split("=", 1) for value in container["Config"].get("Env", []) if "=" in value)
+        expected_env = definition.get("environment") or {}
+        if not all(env.get(key) == str(value) for key, value in expected_env.items()):
+            return False
+        output = command(
+            self.compose(["--progress", "plain", "up", "--dry-run", "--no-deps", "--no-build", service]),
+            include_stderr=True,
+        ).decode(errors="replace")
+        container_name = (container.get("Name") or ("openalbert-" + service + "-1")).lstrip("/")
+        saw_running = False
+        for raw_line in output.splitlines():
+            line = raw_line.strip()
+            if not line.startswith("Container "):
+                continue
+            if any(word in line for word in ("Recreate", "Create", "Start", "Stop", "Remove", "Kill", "Error")):
+                return False
+            if line == f"Container {container_name} Running":
+                saw_running = True
+        return saw_running
+
+    def probe_llm(self):
+        env = self.app_env()
+        mode = env.get("OPENAI_AUTH_MODE", "api_key")
+        if mode == "api_key":
+            return llm_probe(env)
+        require(mode == "profiles", "Only api_key and profiles LLM modes are supported")
+        app_cfg = self.config["services"]["openalbert"]
+        config_file = env.get("LLM_CONFIG_FILE")
+        require(config_file, "LLM_CONFIG_FILE is missing")
+        host_models = host_path_for_container(app_cfg, config_file)
+        require(host_models and host_models.is_file(), "LLM_CONFIG_FILE is not mounted on host")
+        parsed = parse_toml(host_models.read_text(encoding="utf-8"))
+        chat_route = (parsed.get("routes") or {}).get("chat", "")
+        require(bool(chat_route), "LLM chat route is missing in models.toml")
+        if "/" in chat_route:
+            provider_name, model_name = chat_route.split("/", 1)
+            provider = (parsed.get("providers") or {}).get(provider_name) or {}
+        else:
+            provider = (parsed.get("profiles") or {}).get(chat_route) or {}
+            model_name = provider.get("model", "")
+        adapter = provider.get("adapter", "")
+        require(bool(adapter), "LLM provider adapter is missing for route: " + chat_route)
+        if adapter == "openai_chat_completions":
+            key_env = provider.get("api_key_env", "LLM_API_KEY")
+            return llm_probe({"OPENAI_AUTH_MODE": "api_key", "LLM_API_KEY": env.get(key_env, ""),
+                              "LLM_BASE_URL": provider.get("base_url", ""), "LLM_MODEL": model_name})
+        require(adapter == "openai_chatgpt", "Unsupported LLM profile adapter: " + adapter)
+        token_store = env.get("OPENAI_TOKEN_STORE")
+        require(token_store, "OPENAI_TOKEN_STORE is missing")
+        host_tokens = host_path_for_container(app_cfg, token_store)
+        require(host_tokens and host_tokens.is_file(), "ChatGPT credentials file is missing")
+        creds = read_json(host_tokens)
+        require(bool(creds.get("access_token") or creds.get("refresh_token")), "ChatGPT credentials are empty")
+        base_url = str(provider.get("base_url") or "")
+        if "127.0.0.1:8765" in base_url and "llm-meter-relay" in self.config["services"]:
+            relay = self.containers()["llm-meter-relay"]
+            require(relay["State"]["Running"] and relay["State"].get("Health", {}).get("Status", "healthy") == "healthy",
+                    "LLM Meter relay is not healthy")
+            command(["docker", "exec", relay["Id"], "sh", "-c",
+                     "wget -S -O /dev/null http://127.0.0.1:8765/v1 2>&1 | grep -q '401 Unauthorized'"], timeout=15)
+        return {"status": 200, "mode": "profiles", "adapter": adapter, "route": chat_route}
 
     def app_env(self):
         container = self.containers()["openalbert"]
@@ -578,7 +690,7 @@ class Worker:
             command(["docker", "tag", target["repo"] + "@" + target["digest"], target["repo"] + ":master"])
         self.save("deploying", deployment_started=True, started_at=now().isoformat())
         wait = args.get("wait_timeout", 180)
-        self.up([s for s in ("log-gateway", "stt", "openalbert") if s in self.plan["changed"]], wait)
+        self.up([s for s in ("log-gateway", "stt", "tts", "openalbert") if s in self.plan["changed"]], wait)
         if "openalbert" not in self.plan["changed"]:
             command(["docker", "start", self.baseline["containers"]["openalbert"]["id"]])
             self.wait_ready(["openalbert"], wait)
@@ -620,9 +732,10 @@ class Worker:
             except OSError:
                 raise Refused("Application HTTP check failed") from None
         command(["docker", "exec", containers["temporal"]["Id"], "temporal", "operator", "cluster", "health", "--address", "temporal:7233"])
-        if "stt" in self.config["services"]:
-            command(["docker", "exec", containers["stt"]["Id"], "python3", "-c",
-                     "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/ready',timeout=10)"])
+        for ready_service in ("stt", "tts"):
+            if ready_service in self.config["services"]:
+                command(["docker", "exec", containers[ready_service]["Id"], "python3", "-c",
+                         "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/ready',timeout=10)"])
         counts = self.counts()
         require(all(counts.get(table, -1) >= count for table, count in self.before_counts.items()), "Application row count decreased")
         for name, before in self.before_trees.items():
@@ -644,7 +757,7 @@ class Worker:
             except OSError:
                 raise Refused("S3 sample check failed") from None
         checks["computer_after"] = self.computer_probe()
-        checks["llm_after"] = llm_probe(self.app_env())
+        checks["llm_after"] = self.probe_llm()
         checks["s3_backup_after"] = self.remote_copies()
         state = self.check_backup()
         require(all(state.get(key) == self.backup_config.get(key) for key in ("time", "timezone", "keep_days")), "Backup schedule changed")
