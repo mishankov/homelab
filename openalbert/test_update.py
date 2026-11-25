@@ -518,6 +518,51 @@ class PolicyTests(unittest.TestCase):
             with self.assertRaisesRegex(update.Refused, "No linux/arm64"):
                 update.registry_image("example/image")
 
+    def test_registry_image_retries_transient_docker_failures(self):
+        index = {
+            "manifest": {
+                "digest": "sha256:" + "1" * 64,
+                "manifests": [{"platform": {"os": "linux", "architecture": "arm64"},
+                               "digest": "sha256:" + "2" * 64}],
+            },
+            "image": {
+                "linux/arm64": {
+                    "config": {
+                        "Labels": {
+                            "org.opencontainers.image.revision": NEW,
+                            "org.opencontainers.image.source": ORIGIN,
+                        }
+                    }
+                }
+            },
+        }
+        raw = {"config": {"digest": "sha256:" + "3" * 64}, "layers": [{"size": 123}, {"size": 456}]}
+        calls = [
+            update.Refused("Command failed: docker (exit 1)"),
+            index,
+            update.Refused("Command timed out: docker"),
+            raw,
+        ]
+        with patch("update.json_command", side_effect=calls) as mocked, \
+                patch("update.time.sleep") as slept:
+            result = update.registry_image("ghcr.io/mishankov/openalbert/openalbert")
+        self.assertEqual(result["revision"], NEW)
+        self.assertEqual(result["download_bytes"], 579)
+        self.assertEqual(mocked.call_count, 4)
+        self.assertEqual(slept.call_count, 2)
+
+    def test_retry_registry_stops_after_limit_and_does_not_retry_exec_error(self):
+        with patch("update.time.sleep") as slept:
+            with self.assertRaisesRegex(update.Refused, "Command failed: docker"):
+                update.retry_registry(lambda: (_ for _ in ()).throw(update.Refused("Command failed: docker (exit 1)")),
+                                      attempts=3, delay=0.5)
+        self.assertEqual([call.args[0] for call in slept.call_args_list], [0.5, 1.0])
+        with patch("update.time.sleep") as slept:
+            with self.assertRaisesRegex(update.Refused, "Cannot execute: docker"):
+                update.retry_registry(lambda: (_ for _ in ()).throw(update.Refused("Cannot execute: docker")),
+                                      attempts=3, delay=0.5)
+        slept.assert_not_called()
+
     def test_plan_detects_storage_change_and_independent_component_revisions(self):
         baseline = {"images": {}, "containers": {}}
         candidates = {}

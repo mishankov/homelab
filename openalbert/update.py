@@ -139,9 +139,19 @@ def source_guard(source, before, after, component):
     return risky
 
 
+def retry_registry(fn, *, attempts=3, delay=1.0):
+    for attempt in range(attempts):
+        try:
+            return fn()
+        except Refused as error:
+            if attempt + 1 >= attempts or not str(error).startswith(("Command failed:", "Command timed out:")):
+                raise
+            time.sleep(delay * (attempt + 1))
+
+
 def registry_image(repo):
-    inspected = json_command(["docker", "buildx", "imagetools", "inspect", repo + ":master",
-                              "--format", "{{json .}}"])
+    inspected = retry_registry(lambda: json_command(["docker", "buildx", "imagetools", "inspect", repo + ":master",
+                                                     "--format", "{{json .}}"]))
     manifest = inspected["manifest"]
     arm = inspected.get("image", {}).get("linux/arm64")
     arm_manifest = next((m for m in manifest.get("manifests", [])
@@ -153,8 +163,8 @@ def registry_image(repo):
     require(SHA.fullmatch(revision), "No OCI source revision: " + repo)
     require(DIGEST.fullmatch(manifest["digest"]) and DIGEST.fullmatch(arm_manifest["digest"]),
             "Invalid registry digest")
-    raw = json_command(["docker", "buildx", "imagetools", "inspect",
-                        repo + "@" + arm_manifest["digest"], "--raw"])
+    raw = retry_registry(lambda: json_command(["docker", "buildx", "imagetools", "inspect",
+                                               repo + "@" + arm_manifest["digest"], "--raw"]))
     return {"repo": repo, "digest": manifest["digest"], "arm_digest": arm_manifest["digest"],
             "config_digest": raw["config"]["digest"], "revision": revision,
             "source": labels.get("org.opencontainers.image.source", ""),
@@ -1002,8 +1012,8 @@ def deploy_plan(remote, plan, args):
     for service in plan["changed"]:
         target = plan["targets"][service]
         print("Pulling verified ARM64 image: " + service, flush=True)
-        command(["docker", "--host", "ssh://" + args.host, "pull", "--platform", "linux/arm64",
-                 target["repo"] + "@" + target["digest"]], timeout=1800)
+        retry_registry(lambda: command(["docker", "--host", "ssh://" + args.host, "pull", "--platform", "linux/arm64",
+                                        target["repo"] + "@" + target["digest"]], timeout=1800))
     print("Creating and verifying database/knowledge copy; application will pause.", flush=True)
     remote.call("backup")
     print("Starting selected services.", flush=True)
